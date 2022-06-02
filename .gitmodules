@@ -1,0 +1,3 @@
+[submodule "doomreplay"]
+	path = doomreplay
+	url = https://github.com/lorencerri/doomreplay.git
