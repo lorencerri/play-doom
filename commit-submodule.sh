@@ -1,5 +1,3 @@
-#!/bin/bash
-
 if [ -z "$1" ] || [ -z "$2" ]; then
 	echo "Usage: commit-submodule.sh <submodule-name> <commit-message>"
 else
@@ -9,8 +7,5 @@ else
 	cd ..
 	git add "$1"
 	git commit -m "Updated submodule $1"
+	git push
 fi
-
-echo "press any key to exit"
-read -n 1
-exit 1
