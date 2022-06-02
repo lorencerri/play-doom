@@ -4,5 +4,5 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 
 **Notes**
 
--   Use `git clone --recursive https://github.com/lorencerri/play-doom.git` to download this repo and /doomreplay
+-   Use `git clone --recursive https://github.com/lorencerri/play-doom.git` to download /play-doom + /doomreplay
 -   Use [vscode-drawio](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio) to open `play-doom.drawio` in vscode
