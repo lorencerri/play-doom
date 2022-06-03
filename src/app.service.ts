@@ -80,10 +80,10 @@ export class AppService {
 
 		let output = [];
 		for (const [key, length] of repeating) {
-			output.push(`${this.convertKeyToName(key)} ${length > 1 ? `[x${length}]` : ''}`);
+			output.push(`${this.convertKeyToName(key)}${length > 1 ? ` [x${length}]` : ''}`);
 		}
 
-		return output.join(',');
+		return output.join(', ');
 	}
 
 	convertKeyToName(key: string): string {
