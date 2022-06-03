@@ -26,7 +26,6 @@ export class AppController {
 		const inputHash = await db.get(`inputHash_${namespace}`);
 
 		if (curHash != inputHash) {
-			console.log('rendering')
 			const execStr = this.appService.getReplayExecString(10, `${dataDir}/frame_${namespace}.png`, input.join(''));
 
 			const err = await this.appService.execWithCallback(execStr);

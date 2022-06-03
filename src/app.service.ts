@@ -13,7 +13,9 @@ export class AppService {
 
 	async getInput(namespace: string): Promise<string[]> {
 		const input: string[] = await db.get(`input_${namespace}`) || [];
-		return ['x,', ...input];
+		if (input.length === 0) return ['x,'];
+		else if (input[0] != 'x,') return ['x,'].concat(input);
+		else return input;
 	}
 
 	validateNamespace(namespace: string): void {
