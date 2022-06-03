@@ -36,17 +36,17 @@ export class AppController {
 	}
 
 	@Get('/input/:namespace')
-	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Res({ passthrough: true }) res) {
+	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Query('readable') raw = false, @Res({ passthrough: true }) res) {
 		let err: string;
 
 		err = this.appService.validateNamespace(namespace);
 		if (err) throw new BadRequestException(err);
 
-		let input: string = await db.get(`input_${namespace}`);
+		let input: string[] = await db.get(`input_${namespace}`);
 
-		if (!img) return input;
+		if (!img) return raw ? input : this.appService.normalizeInput(input.join(''));
 
-		const image = this.appService.getImageFromText(input);
+		const image = this.appService.getImageFromText(this.appService.normalizeInput(input.join('')));
 
 		res.set({
 			'Content-Type': 'image/png',

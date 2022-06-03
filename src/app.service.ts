@@ -30,6 +30,55 @@ export class AppService {
 			borderSize: 2,
 			maxWidth: 1920 / 2,
 		}).render();
+	}
 
+	normalizeInput(input: string | string[]): string {
+		if (input instanceof Array) input = input.join('');
+
+		const split = input
+			.replace(/(?<=[xelrudaspftynUDLR<>2-7]),/g, '') // Removes all idles, if preceded by a different key
+			.match(/([,xelrudaspftynUDLR<>2-7])\1*/g) || []; // Splits into groups of consecutive keys
+
+		const repeating: [string, number][] = split.map((i) => [i.charAt(0), i.length]); // [ [key, length], [key, length], ... ]
+
+		let output = [];
+		for (const [key, length] of repeating) {
+			output.push(`${this.convertKeyToName(key)} ${length > 1 ? `[x${length}]` : ''}`);
+		}
+
+		return output.join(',');
+	}
+
+	convertKeyToName(key: string): string {
+		const str: string = {
+			',': 'Idle',
+			'x': 'Escape',
+			'e': 'Enter',
+			'l': 'Left Arrow',
+			'r': 'Right Arrow',
+			'u': 'Up Arrow',
+			'd': 'Down Arrow',
+			'a': 'Alt',
+			's': 'Shift',
+			'p': 'Space',
+			'f': 'CTRL',
+			't': 'Tab',
+			'U': "Shift + Up Arrow",
+			'D': "Shift + Down Arrow",
+			'L': "Shift + Left Arrow",
+			'R': "Shift + Right Arrow",
+			'<': "Strafe Left",
+			'>': "Strafe Right",
+			'y': 'Yes',
+			'n': 'No',
+			'2': 'Item Slot 2',
+			'3': 'Item Slot 3',
+			'4': 'Item Slot 4',
+			'5': 'Item Slot 5',
+			'6': 'Item Slot 6',
+			'7': 'Item Slot 7',
+		}[key];
+
+		return str || "Unknown";
 	}
 }
