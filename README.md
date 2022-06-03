@@ -5,11 +5,14 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 **Endpoints**
 
 ```sh
-GET /frame/:namespace # Returns the current game frame
+GET /raw/:file # Storage for raw replay data (videos, gifs, etc.)
+
+GET /frame/:id # Returns the current game frame
 
 GET /video/:namespace/full # Returns the full video (all runs concatenated)
 GET /video/:namespace/current # Returns a video of the current run
 
+GET /input/:namespace?img=true # Returns an image or text
 GET /input/:namespace/reset?callback="" # Resets the input buffer
 GET /input/:namespace/append?keys=""&callback="" # Appends keys to the input buffer
 GET /input/:namespace/rewind?amount=0&callback="" # Rewinds the input buffer by N keys
