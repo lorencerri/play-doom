@@ -8,11 +8,11 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 GET /frame/:namespace # Returns the current game frame
 
 GET /video/:namespace/full # Returns the full video (all runs concatenated)
-GET /video/:namespace/current
+GET /video/:namespace/current # Returns a video of the current run
 
-GET /input/:namespace/reset?callback=""
-GET /input/:namespace/append?keys=""&callback=""
-GET /input/:namespace/rewind?amount=0&callback=""
+GET /input/:namespace/reset?callback="" # Resets the input buffer
+GET /input/:namespace/append?keys=""&callback="" # Appends keys to the input buffer
+GET /input/:namespace/rewind?amount=0&callback="" # Rewinds the input buffer by N keys
 ```
 
 **Notes**
