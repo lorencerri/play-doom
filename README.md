@@ -30,6 +30,7 @@
 An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomreplay), enter the submodule for more information.
 
 **Statistics**
+
 <img src="https://doom-api.plexidev.org/stats" />
 
 **Endpoints**
