@@ -1,4 +1,4 @@
-**## Play Doom!##**
+**Play Doom!**
 
 <img src="https://doom-api.plexidev.org/frame/github/">
 
