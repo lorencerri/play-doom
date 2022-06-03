@@ -26,9 +26,14 @@ export class AppService {
 		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in query.keys.");
 	}
 
-	getReplayExecString(framerate = 35, outputFile: string, input = ','): string {
+	validateFiletype(type: string): void {
+		if (!['png', 'gif']) throw new BadRequestException("Invalid query.type has to be png or gif.")
+	}
+
+	getReplayExecString(nrecord = 1, framerate = 35, outputFile: string, input = ','): string {
 		return './doomreplay/doomgeneric/doomgeneric' +
 			' -iwad ./doomreplay/doom1.wad' +
+			` -nrecord ${nrecord}` +
 			` -framerate ${framerate}` +
 			' -render_frame -render_input -render_username' +
 			` -output ${outputFile}` +

@@ -17,28 +17,28 @@ export class AppController {
 		return "https://github.com/lorencerri/play-doom";
 	}
 
-	// TODO: Add option to return .gif, displaying movement from previous frame to current frame
 	@Get('/frame/:namespace')
-	async getFrame(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+	async getFrame(@Param('namespace') namespace = "", @Query('type') type = 'png', @Res({ passthrough: true }) res) {
 		this.appService.validateNamespace(namespace);
+		this.appService.validateFiletype(type);
 
 		const input = await this.appService.getInput(namespace);
 
 		const curHash = Md5.hashStr(input.join(''));
-		const inputHash = await db.get(`inputHash_${namespace}`);
+		const inputHash = await db.get(`inputHash_${type}_${namespace}`);
 
 		if (curHash != inputHash) {
-			const execStr = this.appService.getReplayExecString(10, `${dataDir}/frame_${namespace}.png`, input.join(''));
+			const execStr = this.appService.getReplayExecString(1, 10, `${dataDir}/frame_${namespace}.${type}`, input.join(''));
 
 			const err = await this.appService.execWithCallback(execStr);
 			if (err) throw new InternalServerErrorException(err);
 
-			await db.set(`inputHash_${namespace}`, curHash);
+			await db.set(`inputHash_${type}_${namespace}`, curHash);
 		}
 
-		const file = await fs.readFile(`${dataDir}/frame_${namespace}.png`);
+		const file = await fs.readFile(`${dataDir}/frame_${namespace}.${type}`);
 
-		res.set(this.appService.getUncachedHeader('image/png', `frame_${namespace}.png`));
+		res.set(this.appService.getUncachedHeader(`image/${type}`, `frame_${namespace}.${type}`));
 
 		return new StreamableFile(file);
 	}
