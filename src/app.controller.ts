@@ -17,6 +17,7 @@ export class AppController {
 		return "https://github.com/lorencerri/play-doom";
 	}
 
+	// TODO: Add option to return .gif, displaying movement from previous frame to current frame
 	@Get('/frame/:namespace')
 	async getFrame(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
 		this.appService.validateNamespace(namespace);
