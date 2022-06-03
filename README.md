@@ -4,7 +4,7 @@
 
 ### Current Input (<a href="https://doom-api.plexidev.org/input/github/reset/?callback=https://github.com/lorencerri">reset</a>) (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
 
-<img src="https://doom-api.plexidev.org/input/github?cf" />
+<img src="https://doom-api.plexidev.org/input/github?image=true" />
 
 ### Controls
 
