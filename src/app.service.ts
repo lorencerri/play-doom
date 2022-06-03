@@ -17,15 +17,15 @@ export class AppService {
 	}
 
 	validateNamespace(namespace: string): void {
-		if (namespace.length === 0) throw new BadRequestException("Namespace cannot be empty.")
-		if (namespace.length > 32) throw new BadRequestException("Namespace cannot be longer than 32 characters.")
-		if (!/^[a-zA-Z0-9_]+$/.test(namespace)) throw new BadRequestException("Invalid characters in namespace.")
+		if (namespace.length === 0) throw new BadRequestException("query.namespace cannot be empty.")
+		if (namespace.length > 32) throw new BadRequestException("query.namespace cannot be longer than 32 characters.")
+		if (!/^[a-zA-Z0-9_]+$/.test(namespace)) throw new BadRequestException("Invalid characters in query.namespace.")
 	}
 
 	validateInput(input: string): void {
-		if (input.length === 0) throw new BadRequestException("Input cannot be empty.");
-		if (input.length > 1024) throw new BadRequestException("Input cannot be longer than 1024 characters.");
-		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in input.");
+		if (input.length === 0) throw new BadRequestException("query.keys cannot be empty.");
+		if (input.length > 1024) throw new BadRequestException("query.keys cannot be longer than 1024 characters.");
+		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in query.keys.");
 	}
 
 	getReplayExecString(framerate = 35, outputFile: string, input = ','): string {
