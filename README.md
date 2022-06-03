@@ -41,10 +41,10 @@ GET /raw/:file # Storage for raw replay data (videos, gifs, etc.) *TODO*
 
 GET /stats?image=true # Returns the global stats
 
-GET /frame/:namespace # Returns the current game frame
-
 GET /video/:namespace/full # Returns the full video (all runs concatenated) *TODO*
 GET /video/:namespace/current # Returns a video of the current run *TODO*
+
+GET /frame/:namespace?type=gif # Returns the current frame
 
 GET /input/:namespace?image=true # Returns an image or text
 GET /input/:namespace/reset?callback="" # Resets the input buffer
