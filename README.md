@@ -1,12 +1,9 @@
 **Play Doom!**
 
 <img src="https://doom-api.plexidev.org/frame/github/">
-
-### Current Input (<a href="https://doom-api.plexidev.org/input/github/reset/?callback=https://github.com/lorencerri">reset</a>) (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
-
 <img src="https://doom-api.plexidev.org/input/github?image=true" />
 
-### Controls
+### Controls (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
 
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=,&callback=https://github.com/lorencerri">Idle Frame</a> [<a href="https://doom-api.plexidev.org/input/github/append?keys=,,,,,,,,,,&callback=https://github.com/lorencerri">10x</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri">25x</a>]
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=x,&callback=https://github.com/lorencerri">Escape</a>
