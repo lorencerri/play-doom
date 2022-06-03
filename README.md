@@ -7,7 +7,7 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 ```sh
 GET /raw/:file # Storage for raw replay data (videos, gifs, etc.)
 
-GET /frame/:id # Returns the current game frame
+GET /frame/:namespace # Returns the current game frame
 
 GET /video/:namespace/full # Returns the full video (all runs concatenated)
 GET /video/:namespace/current # Returns a video of the current run

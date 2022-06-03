@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Param, Query, Res } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, Res, StreamableFile } from '@nestjs/common';
 import { QuickDB } from 'quick.db';
 import { AppService } from './app.service';
 
@@ -13,10 +13,38 @@ export class AppController {
 		return this.appService.getHello();
 	}
 
+	@Get('/input/:namespace')
+	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Res({ passthrough: true }) res) {
+		let err: string;
+
+		err = this.appService.validateNamespace(namespace);
+		if (err) throw new BadRequestException(err);
+
+		let input: string = await db.get(`input_${namespace}`);
+
+		if (!img) return input;
+
+		const image = this.appService.getImageFromText(input);
+
+		res.set({
+			'Content-Type': 'image/png',
+			'Content-Disposition': `attachment; filename="input_${namespace}.png"`,
+			'Cache-Control': 'no-cache,max-age=0',
+			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
+		});
+
+		return new StreamableFile(image.toStream());
+	}
+
 	@Get('/input/:namespace/append')
 	async appendInput(@Param('namespace') namespace = "", @Query('input') input = "", @Query('callback') callback = "", @Res({ passthrough: true }) res): Promise<any> {
-		if (namespace.length === 0) throw new BadRequestException("Missing namespace")
-		if (!this.appService.isValidInput(input)) throw new BadRequestException("Invalid input");
+		let err: string;
+
+		err = this.appService.validateNamespace(namespace);
+		if (err) throw new BadRequestException(err);
+
+		err = this.appService.validateInput(input)
+		if (err) throw new BadRequestException(err);
 
 		await db.push(`input_${namespace}`, input);
 
