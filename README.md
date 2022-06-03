@@ -1,6 +1,6 @@
 **Play Doom!**
 
-![](https://doom-api.plexidev.org/frame/github?type=.gif)<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
+![](https://doom-api.plexidev.org/frame/github/?type=.gif)<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
 
 ### Controls (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
 
@@ -11,10 +11,10 @@
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=a,&callback=https://github.com/lorencerri">Alt</a>
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=s,&callback=https://github.com/lorencerri">Shift</a>
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=p,&callback=https://github.com/lorencerri">Space</a> (Use)
-- <a href="https://doom-api.plexidev.org/input/github/append?keys=f,&callback=https://github.com/lorencerri">CTRL</a> (Shoot) [<a href="https://doom-api.plexidev.org/input/github/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri">5x</a>]
+- <a href="https://doom-api.plexidev.org/input/github/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri">CTRL</a> (Shoot) [<a href="https://doom-api.plexidev.org/input/github/append?keys=f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,&callback=https://github.com/lorencerri">Spam Button</a>]
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=t,&callback=https://github.com/lorencerri">Tab</a> (Map)
 - Shift + [<a href="https://doom-api.plexidev.org/input/github/append?keys=U,&callback=https://github.com/lorencerri">Up Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=D,&callback=https://github.com/lorencerri">Down Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=L,&callback=https://github.com/lorencerri">Left Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=R,&callback=https://github.com/lorencerri">Right Arrow</a>]
-- Strafe [<a href="https://doom-api.plexidev.org/input/github/append?keys=j,&callback=https://github.com/lorencerri">Left</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=k,&callback=https://github.com/lorencerri">Right</a>]
+- Strafe [<a href="https://doom-api.plexidev.org/input/github/append?keys=j,j,j,j,j,&callback=https://github.com/lorencerri">Left</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=k,k,k,k,k,&callback=https://github.com/lorencerri">Right</a>]
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=y,&callback=https://github.com/lorencerri">Yes</a>
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=n,&callback=https://github.com/lorencerri">No</a>
 - Item Slot [<a href="https://doom-api.plexidev.org/input/github/append?keys=2,&callback=https://github.com/lorencerri">2</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=3,&callback=https://github.com/lorencerri">3</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=4,&callback=https://github.com/lorencerri">4</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=5,&callback=https://github.com/lorencerri">5</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=6,&callback=https://github.com/lorencerri">6</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=7,&callback=https://github.com/lorencerri">7</a>]
@@ -22,6 +22,12 @@
 ### Meta Actions
 
 - <a href="https://doom-api.plexidev.org/input/github/reset/?callback=https://github.com/lorencerri">Reset Game</a>
+
+### Videos
+
+- <a href="https://doom-api.plexidev.org/video/github/current">Get full video of current run</a>
+- <a href="https://doom-api.plexidev.org/video/github/full">Get full video of all previous runs combined</a>
+- <a href="https://doom-api.plexidev.org/video/github/combined">Get full video of all previous runs combined + current run</a>
 
 **## END_GAME ##**
 
