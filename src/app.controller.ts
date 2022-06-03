@@ -18,27 +18,29 @@ export class AppController {
 	}
 
 	@Get('/frame/:namespace')
-	async getFrame(@Param('namespace') namespace = "", @Query('type') type = 'png', @Res({ passthrough: true }) res) {
+	async getFrame(@Param('namespace') namespace = "", @Query('type') type = '.png', @Res({ passthrough: true }) res) {
 		this.appService.validateNamespace(namespace);
 		this.appService.validateFiletype(type);
 
 		const input = await this.appService.getInput(namespace);
 
 		const curHash = Md5.hashStr(input.join(''));
-		const inputHash = await db.get(`inputHash_${type}_${namespace}`);
+		const inputHash = await db.get(`inputHash_${namespace}`);
 
 		if (curHash != inputHash) {
-			const execStr = this.appService.getReplayExecString(1, 10, `${dataDir}/frame_${namespace}.${type}`, input.join(''));
+			const frameCount = type === 'png' ? 1 : Math.min(input[input.length - 1].length, 16);
+			const nthframe = type === 'png' ? 1 : 2;
+			const execStr = this.appService.getReplayExecString(frameCount, nthframe, 20, `${dataDir}/frame_${namespace}${type}`, input.join(''));
 
 			const err = await this.appService.execWithCallback(execStr);
 			if (err) throw new InternalServerErrorException(err);
 
-			await db.set(`inputHash_${type}_${namespace}`, curHash);
+			await db.set(`inputHash_${namespace}`, curHash);
 		}
 
-		const file = await fs.readFile(`${dataDir}/frame_${namespace}.${type}`);
+		const file = await fs.readFile(`${dataDir}/frame_${namespace}${type}`);
 
-		res.set(this.appService.getUncachedHeader(`image/${type}`, `frame_${namespace}.${type}`));
+		res.set(this.appService.getUncachedHeader(`image/${type}`, `frame_${namespace}${type}`));
 
 		return new StreamableFile(file);
 	}

@@ -14,6 +14,10 @@ export class AppService {
 		else return input;
 	}
 
+	validateFiletype(type: string): void {
+		if (!['.png', '.gif'].includes(type)) throw new BadRequestException("query.type is invalid")
+	}
+
 	validateNamespace(namespace: string): void {
 		if (namespace.length === 0) throw new BadRequestException("query.namespace cannot be empty.")
 		if (namespace.length > 32) throw new BadRequestException("query.namespace cannot be longer than 32 characters.")
@@ -26,14 +30,11 @@ export class AppService {
 		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in query.keys.");
 	}
 
-	validateFiletype(type: string): void {
-		if (!['png', 'gif']) throw new BadRequestException("Invalid query.type has to be png or gif.")
-	}
-
-	getReplayExecString(nrecord = 1, framerate = 35, outputFile: string, input = ','): string {
+	getReplayExecString(nrecord = 1, nthframe = 1, framerate = 35, outputFile: string, input = ','): string {
 		return './doomreplay/doomgeneric/doomgeneric' +
 			' -iwad ./doomreplay/doom1.wad' +
 			` -nrecord ${nrecord}` +
+			` -nthframe ${nthframe}` +
 			` -framerate ${framerate}` +
 			' -render_frame -render_input -render_username' +
 			` -output ${outputFile}` +
