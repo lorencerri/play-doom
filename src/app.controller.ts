@@ -55,7 +55,7 @@ export class AppController {
 			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
 		});
 
-		return new StreamableFile(image.toStream());
+		return new StreamableFile(image.toStream(), {});
 	}
 
 	@Get('/input/:namespace/append')
