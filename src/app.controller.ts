@@ -3,6 +3,7 @@ import { QuickDB } from 'quick.db';
 import { AppService } from './app.service';
 
 const db = new QuickDB();
+const dataDir = './data';
 
 @Controller()
 export class AppController {
@@ -11,6 +12,39 @@ export class AppController {
 	@Get()
 	getHello(): string {
 		return this.appService.getHello();
+	}
+
+	@Get('/frame/:namespace')
+	async getFrame(@Param('namespace') namespace = "") {
+		const err = this.appService.validateNamespace(namespace);
+		if (err) throw new BadRequestException(err);
+
+		const input: string[] = await db.get(`input_${namespace}`) || [];
+		const execStr = this.appService.getReplayExecString(10, `${dataDir}/frame_${namespace}.png`, input.join(''));
+
+		const output = await this.appService.execWithCallback(execStr);
+
+		// TODO: Return output buffer as image or gif
+
+		return output;
+	}
+
+	@Get('/input/:namespace')
+	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Query('readable') raw = false, @Res({ passthrough: true }) res) {
+		let err: string;
+
+		err = this.appService.validateNamespace(namespace);
+		if (err) throw new BadRequestException(err);
+
+		let input: string[] = await db.get(`input_${namespace}`) || [];
+
+		if (!img) return raw ? input : this.appService.normalizeInput(input.join(''));
+
+		const image = this.appService.getImageFromText(this.appService.normalizeInput(input.join('')));
+
+		res.set(this.appService.getUncachedHeader('image/png', `input_${namespace}.png`));
+
+		return new StreamableFile(image.toStream());
 	}
 
 	@Get('/input/:namespace/reset')
@@ -33,29 +67,6 @@ export class AppController {
 
 		if (callback.length != 0) return res.status(200).redirect(callback);
 		else return res.status(200).send(`${namespace} reset`);
-	}
-
-	@Get('/input/:namespace')
-	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Query('readable') raw = false, @Res({ passthrough: true }) res) {
-		let err: string;
-
-		err = this.appService.validateNamespace(namespace);
-		if (err) throw new BadRequestException(err);
-
-		let input: string[] = await db.get(`input_${namespace}`);
-
-		if (!img) return raw ? input : this.appService.normalizeInput(input.join(''));
-
-		const image = this.appService.getImageFromText(this.appService.normalizeInput(input.join('')));
-
-		res.set({
-			'Content-Type': 'image/png',
-			'Content-Disposition': `attachment; filename="input_${namespace}.png"`,
-			'Cache-Control': 'no-cache,max-age=0',
-			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
-		});
-
-		return new StreamableFile(image.toStream(), {});
 	}
 
 	@Get('/input/:namespace/append')

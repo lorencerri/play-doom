@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { UltimateTextToImage } from 'ultimate-text-to-image';
+import { exec } from 'child_process';
 
 @Injectable()
 export class AppService {
@@ -21,13 +22,50 @@ export class AppService {
 		return "";
 	}
 
+	getReplayExecString(framerate = 35, outputFile: string, input = ','): string {
+		return './doomreplay/doomgeneric/doomgeneric' +
+			' -iwad ./doomreplay/doom1.wad' +
+			` -framerate ${framerate}` +
+			' -render_frame -render_input -render_username' +
+			` -output ${outputFile}` +
+			` -input ${input}`
+	}
+
+	async execWithCallback(execStr = ""): Promise<string> {
+		if (execStr.length === 0) throw new InternalServerErrorException("execStr cannot be empty.");
+		return new Promise((resolve, reject) => {
+			const process = exec(execStr);
+			let output = "";
+
+			process.stderr.on('data', (data) => {
+				console.log(data);
+				output += data
+			});
+			process.stdout.on('data', (data) => {
+				console.log(data);
+				output += data
+			});
+			process.on('exit', () => resolve(output));
+			process.on('close', () => resolve(output));
+			process.on('error', (err) => reject(err));
+		})
+	}
+
+	getUncachedHeader(contentType: string, filename: string): any {
+		return {
+			'Content-Type': contentType,
+			'Content-Disposition': `attachment; filename="${filename}"`,
+			'Cache-Control': 'no-cache,max-age=0',
+			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
+		}
+	}
+
 	getImageFromText(input: string): UltimateTextToImage {
 		return new UltimateTextToImage(input, {
 			fontSize: 12,
 			fontColor: '#C1C2C5',
 			backgroundColor: '#1A1B1E',
-			borderColor: '#1A1B1E',
-			borderSize: 2,
+			margin: 2,
 			maxWidth: 1920 / 2,
 		}).render();
 	}
