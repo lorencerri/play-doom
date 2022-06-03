@@ -13,6 +13,28 @@ export class AppController {
 		return this.appService.getHello();
 	}
 
+	@Get('/input/:namespace/reset')
+	async resetInput(@Param('namespace') namespace = "", @Query('callback') callback = "", @Res({ passthrough: true }) res): Promise<any> {
+		let err: string;
+
+		err = this.appService.validateNamespace(namespace);
+		if (err) throw new BadRequestException(err);
+
+		/**
+		 * TODO: Generate video, store file in a folder, store path in the database
+		 * const input = await db.get(`input_${namespace}`);
+		 * const rpath = this.appService.generateVideo(input);
+		 * await db.push(`runs_${namespace}, rpath);
+		 * const fpath = await this.appService.concatenateVideos(fullVideo, path);
+		 * await db.set(`fullVideo_${namespace}`, fpath);
+		 */
+
+		await db.delete(`input_${namespace}`);
+
+		if (callback.length != 0) return res.status(200).redirect(callback);
+		else return res.status(200).send(`${namespace} reset`);
+	}
+
 	@Get('/input/:namespace')
 	async getInput(@Param('namespace') namespace = "", @Query('image') img = false, @Res({ passthrough: true }) res) {
 		let err: string;
@@ -37,18 +59,18 @@ export class AppController {
 	}
 
 	@Get('/input/:namespace/append')
-	async appendInput(@Param('namespace') namespace = "", @Query('input') input = "", @Query('callback') callback = "", @Res({ passthrough: true }) res): Promise<any> {
+	async appendInput(@Param('namespace') namespace = "", @Query('keys') keys = "", @Query('callback') callback = "", @Res({ passthrough: true }) res): Promise<any> {
 		let err: string;
 
 		err = this.appService.validateNamespace(namespace);
 		if (err) throw new BadRequestException(err);
 
-		err = this.appService.validateInput(input)
+		err = this.appService.validateInput(keys)
 		if (err) throw new BadRequestException(err);
 
-		await db.push(`input_${namespace}`, input);
+		await db.push(`input_${namespace}`, keys);
 
 		if (callback.length != 0) return res.status(200).redirect(callback);
-		else return res.status(200).send(`${input} appended to ${namespace}`);
+		else return res.status(200).send(`${keys} appended to ${namespace}`);
 	}
 }
