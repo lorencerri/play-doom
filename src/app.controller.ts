@@ -3,14 +3,10 @@ import { QuickDB } from 'quick.db';
 import { AppService } from './app.service';
 import { promises as fs } from 'fs';
 import { Md5 } from 'ts-md5/dist/md5';
+import { Stats } from './types';
 
 const db = new QuickDB();
 const dataDir = './data';
-
-type Stats = {
-	actions: number
-	keysPressed: number
-}
 
 @Controller()
 export class AppController {
@@ -86,11 +82,13 @@ export class AppController {
 		this.appService.validateInput(keys)
 
 		await db.push(`input_${namespace}`, keys);
+
+
+		if (callback.length != 0) res.status(200).redirect(callback);
+		else res.status(200).send(`${keys} appended to ${namespace}`);
+
 		await db.add(`stats.actions`, 1);
 		await db.add(`stats.keysPressed`, keys.length);
-
-		if (callback.length != 0) return res.status(200).redirect(callback);
-		res.status(200).send(`${keys} appended to ${namespace}`);
 	}
 
 	@Get('/input/:namespace/rewind')
@@ -100,11 +98,13 @@ export class AppController {
 		const input = await this.appService.getInput(namespace);
 		if (input.length > 1) {
 			input.pop();
-			await db.set(`input_${namespace}`, input);
+			await db.set(`input.${namespace}`, input);
 		}
 
-		if (callback.length != 0) return res.status(200).redirect(callback);
-		res.status(200).send(`${keys} appended to ${namespace}`);
+		if (callback.length != 0) res.status(200).redirect(callback);
+		else res.status(200).send(`${keys} appended to ${namespace}`);
+
+		await db.add(`stats.rewinds`, 1);
 	}
 
 	@Get('/stats')
@@ -112,7 +112,7 @@ export class AppController {
 		const stats: Stats = await db.get('stats');
 		if (!img) return stats;
 
-		const text = `${stats.actions}`
+		const text = `\nActions: ${stats.actions || 0}\nRewinds: ${stats.rewinds || 0}\nKeys Pressed: ${stats.keysPressed || 0}`;
 
 		const image = this.appService.getImageFromText(text);
 
