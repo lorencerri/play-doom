@@ -7,6 +7,11 @@ import { Md5 } from 'ts-md5/dist/md5';
 const db = new QuickDB();
 const dataDir = './data';
 
+type Stats = {
+	actions: number
+	keysPressed: number
+}
+
 @Controller()
 export class AppController {
 	constructor(private readonly appService: AppService) { }
@@ -81,6 +86,8 @@ export class AppController {
 		this.appService.validateInput(keys)
 
 		await db.push(`input_${namespace}`, keys);
+		await db.add(`stats.actions`, 1);
+		await db.add(`stats.keysPressed`, keys.length);
 
 		if (callback.length != 0) return res.status(200).redirect(callback);
 		res.status(200).send(`${keys} appended to ${namespace}`);
@@ -98,5 +105,19 @@ export class AppController {
 
 		if (callback.length != 0) return res.status(200).redirect(callback);
 		res.status(200).send(`${keys} appended to ${namespace}`);
+	}
+
+	@Get('/stats')
+	async getStats(@Query('image') img = true, @Res({ passthrough: true }) res) {
+		const stats: Stats = await db.get('stats');
+		if (!img) return stats;
+
+		const text = `${stats.actions}`
+
+		const image = this.appService.getImageFromText(text);
+
+		res.set(this.appService.getUncachedHeader('image/png', `stats.png`));
+
+		return new StreamableFile(image.toStream());
 	}
 }
