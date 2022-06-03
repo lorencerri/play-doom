@@ -1,6 +1,6 @@
 **Play Doom!**
 
-!()["https://doom-api.plexidev.org/frame/github?type=.gif"]<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
+![](https://doom-api.plexidev.org/frame/github?type=.gif)<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
 
 ### Controls (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
 
@@ -37,19 +37,19 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 
 ```sh
 
-GET /raw/:file # Storage for raw replay data (videos, gifs, etc.)
+GET /raw/:file # Storage for raw replay data (videos, gifs, etc.) *TODO*
 
 GET /stats?image=true # Returns the global stats
 
-GET /frame/:namespace # Returns the current game frame
+GET /video/:namespace/full # Returns the full video (all runs concatenated) *TODO*
+GET /video/:namespace/current # Returns a video of the current run *TODO*
 
-GET /video/:namespace/full # Returns the full video (all runs concatenated)
-GET /video/:namespace/current # Returns a video of the current run
+GET /frame/:namespace?type=gif # Returns the current frame
 
 GET /input/:namespace?image=true # Returns an image or text
 GET /input/:namespace/reset?callback="" # Resets the input buffer
 GET /input/:namespace/append?keys=""&callback="" # Appends keys to the input buffer
-GET /input/:namespace/rewind?amount=0&callback="" # Rewinds the input buffer by N keys
+GET /input/:namespace/rewind?amount=1&callback="" # Rewinds the input buffer by N keys
 ```
 
 **Notes**
