@@ -14,7 +14,7 @@
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=f,&callback=https://github.com/lorencerri">CTRL</a> (Shoot) [<a href="https://doom-api.plexidev.org/input/github/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri">5x</a>]
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=t,&callback=https://github.com/lorencerri">Tab</a> (Map)
 - Shift + [<a href="https://doom-api.plexidev.org/input/github/append?keys=U,&callback=https://github.com/lorencerri">Up Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=D,&callback=https://github.com/lorencerri">Down Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=L,&callback=https://github.com/lorencerri">Left Arrow</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=R,&callback=https://github.com/lorencerri">Right Arrow</a>]
-- Strafe [<a href="https://doom-api.plexidev.org/input/github/append?keys=<,&callback=https://github.com/lorencerri">Left</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=>,&callback=https://github.com/lorencerri">Right</a>]
+- Strafe [<a href="https://doom-api.plexidev.org/input/github/append?keys=j,&callback=https://github.com/lorencerri">Left</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=k,&callback=https://github.com/lorencerri">Right</a>]
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=y,&callback=https://github.com/lorencerri">Yes</a>
 - <a href="https://doom-api.plexidev.org/input/github/append?keys=n,&callback=https://github.com/lorencerri">No</a>
 - Item Slot [<a href="https://doom-api.plexidev.org/input/github/append?keys=2,&callback=https://github.com/lorencerri">2</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=3,&callback=https://github.com/lorencerri">3</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=4,&callback=https://github.com/lorencerri">4</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=5,&callback=https://github.com/lorencerri">5</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=6,&callback=https://github.com/lorencerri">6</a>] [<a href="https://doom-api.plexidev.org/input/github/append?keys=7,&callback=https://github.com/lorencerri">7</a>]
@@ -36,13 +36,11 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 **Endpoints**
 
 ```sh
-
-GET /raw/:file # Storage for raw replay data (videos, gifs, etc.) *TODO*
-
 GET /stats?image=true # Returns the global stats
 
-GET /video/:namespace/full # Returns the full video (all runs concatenated) *TODO*
-GET /video/:namespace/current # Returns a video of the current run *TODO*
+GET /video/:namespace/current # Returns a video of the full current run
+GET /video/:namespace/full # Returns a video of all the previous runs combined
+GET /video/:namespace/combined # Returns a video of all the previous runs combined, plus the current run
 
 GET /frame/:namespace?type=gif # Returns the current frame
 

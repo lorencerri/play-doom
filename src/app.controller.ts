@@ -66,19 +66,109 @@ export class AppController {
 	async resetInput(@Param('namespace') namespace = "", @Query('callback') callback = "", @Res({ passthrough: true }) res) {
 		this.appService.validateNamespace(namespace);
 
-		/**
-		 * TODO: Generate video, store file in a folder, store path in the database
-		 * const input = await db.get(`input_${namespace}`);
-		 * const rpath = this.appService.generateVideo(input);
-		 * await db.push(`runs_${namespace}, rpath);
-		 * const fpath = await this.appService.concatenateVideos(fullVideo, path);
-		 * await db.set(`fullVideo_${namespace}`, fpath);
-		 */
-
+		const input = await this.appService.getInput(namespace);
 		await db.delete(`input_${namespace}`);
+		await db.set(`currentVideoOutdated_${namespace}`, true);
 
-		if (callback.length != 0) return res.status(200).redirect(callback);
-		res.status(200).send(`${namespace} reset`);
+		if (callback.length != 0) res.status(200).redirect(callback);
+		else res.status(200).send(`${namespace} reset`);
+
+		if (input.length > 1) {
+			await this.appService.generateVideo(namespace, input, 'current');
+			await db.set(`combinedOutdated_${namespace}`, true);
+
+			const fullExists = await this.appService.canAccessFile(`${dataDir}/full_${namespace}.mp4`);
+
+			if (fullExists) {
+				await fs.writeFile(`${dataDir}/files.txt`, `file 'full_${namespace}.mp4'\nfile 'current_${namespace}.mp4'`, 'utf8');
+				const execStr = `ffmpeg -f concat -i ${dataDir}/files.txt -y -safe 0 -c copy ${dataDir}/tmp_full_${namespace}.mp4`;
+				const err = await this.appService.execWithCallback(execStr);
+				if (err) throw new InternalServerErrorException(err);
+				await db.set(`fullVideoOutdated_${namespace}`, false);
+				await fs.rename(`${dataDir}/tmp_full_${namespace}.mp4`, `${dataDir}/full_${namespace}.mp4`);
+			} else {
+				await fs.rename(`${dataDir}/current_${namespace}.mp4`, `${dataDir}/full_${namespace}.mp4`);
+			}
+		}
+	}
+
+	@Get('/video/:namespace/current')
+	async getCurrentVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+		this.appService.validateNamespace(namespace);
+
+		const input = await this.appService.getInput(namespace);
+		const outdated = await db.get(`currentVideoOutdated_${namespace}`);
+
+		const exists = await this.appService.canAccessFile(`${dataDir}/current_${namespace}.mp4`)
+		if (outdated || !exists) {
+			await this.appService.generateVideo(namespace, input, 'current')
+			await db.set(`currentVideoOutdated_${namespace}`, false);
+		}
+
+		const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
+		res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
+		return new StreamableFile(file);
+	}
+
+	@Get('/video/:namespace/full')
+	async getFullVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+		this.appService.validateNamespace(namespace);
+
+		const currentExists = await this.appService.canAccessFile(`${dataDir}/current_${namespace}.mp4`);
+		const fullExists = await this.appService.canAccessFile(`${dataDir}/full_${namespace}.mp4`)
+		const currentOutdated = await db.get(`currentVideoOutdated_${namespace}`);
+
+		if (!currentExists || currentOutdated) {
+			const input = await this.appService.getInput(namespace);
+			await this.appService.generateVideo(namespace, input, 'current');
+			await db.set(`currentVideoOutdated_${namespace}`, false);
+		}
+
+		if (!fullExists) {
+			const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
+			res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
+			return new StreamableFile(file);
+		}
+
+		const file = await fs.readFile(`${dataDir}/full_${namespace}.mp4`);
+		res.set(this.appService.getUncachedHeader('video/mp4', `full_${namespace}.mp4`, false));
+		return new StreamableFile(file);
+	}
+
+	@Get('/video/:namespace/combined')
+	async getCombinedVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+		this.appService.validateNamespace(namespace);
+
+		const currentExists = await this.appService.canAccessFile(`${dataDir}/current_${namespace}.mp4`);
+		const fullExists = await this.appService.canAccessFile(`${dataDir}/full_${namespace}.mp4`)
+		const combinedExists = await this.appService.canAccessFile(`${dataDir}/combined_${namespace}.mp4`);
+		const fullOutdated = await db.get(`fullVideoOutdated_${namespace}`);
+		const currentOutdated = await db.get(`currentVideoOutdated_${namespace}`);
+		const combinedOutdated = await db.get(`combinedOutdated_${namespace}`);
+
+		if (!currentExists || currentOutdated) {
+			const input = await this.appService.getInput(namespace);
+			await this.appService.generateVideo(namespace, input, 'current');
+			await db.set(`currentVideoOutdated_${namespace}`, false);
+		}
+
+		if (!fullExists || fullOutdated) {
+			const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
+			res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
+			return new StreamableFile(file);
+		}
+
+		if (!combinedExists || combinedOutdated) {
+			await fs.writeFile(`${dataDir}/files.txt`, `file 'full_${namespace}.mp4'\nfile 'current_${namespace}.mp4'`, 'utf8');
+			const execStr = `ffmpeg -f concat -i ${dataDir}/files.txt -y -safe 0 -c copy ${dataDir}/combined_${namespace}.mp4`;
+			const err = await this.appService.execWithCallback(execStr);
+			if (err) throw new InternalServerErrorException(err);
+			await db.set(`combinedOutdated_${namespace}`, false);
+		}
+
+		const file = await fs.readFile(`${dataDir}/combined_${namespace}.mp4`);
+		res.set(this.appService.getUncachedHeader('video/mp4', `combined_${namespace}.mp4`, false));
+		return new StreamableFile(file);
 	}
 
 	@Get('/input/:namespace/append')
@@ -88,12 +178,13 @@ export class AppController {
 
 		await db.push(`input_${namespace}`, keys);
 
-
 		if (callback.length != 0) res.status(200).redirect(callback);
 		else res.status(200).send(`${keys} appended to ${namespace}`);
 
 		await db.add(`stats.actions`, 1);
 		await db.add(`stats.keysPressed`, keys.length);
+		await db.set(`currentVideoOutdated_${namespace}`, true);
+		await db.set(`combinedOutdated_${namespace}`, true);
 	}
 
 	@Get('/input/:namespace/rewind')

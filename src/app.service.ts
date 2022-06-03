@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { UltimateTextToImage } from 'ultimate-text-to-image';
 import { exec } from 'child_process';
+import { promises as fs } from 'fs';
 import { QuickDB } from 'quick.db';
 
 const db = new QuickDB();
+const dataDir = './data';
 
 @Injectable()
 export class AppService {
@@ -54,10 +56,10 @@ export class AppService {
 		})
 	}
 
-	getUncachedHeader(contentType: string, filename: string): any {
+	getUncachedHeader(contentType: string, filename: string, attachment = true): any {
 		return {
 			'Content-Type': contentType,
-			'Content-Disposition': `attachment; filename="${filename}"`,
+			'Content-Disposition': `${attachment ? 'attachment;' : ''} filename="${filename}"`,
 			'Cache-Control': 'no-cache,max-age=0',
 			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
 		}
@@ -88,6 +90,19 @@ export class AppService {
 		}
 
 		return output.join(', ');
+	}
+
+	async canAccessFile(path: string): Promise<boolean> {
+		try {
+			await fs.access(path);
+			return true;
+		} catch (e) { return false }
+	}
+
+	async generateVideo(namespace: string, input: string[], type: 'current' | 'full'): Promise<any> {
+		const execStr = this.getReplayExecString(10000, 1, 20, `${dataDir}/${type}_${namespace}.mp4`, input.join(''));
+		const err = await this.execWithCallback(execStr);
+		if (err) throw new InternalServerErrorException(err);
 	}
 
 	convertKeyToName(key: string): string {
