@@ -7,10 +7,6 @@ const db = new QuickDB();
 
 @Injectable()
 export class AppService {
-	getHello(): string {
-		return 'Hello World!';
-	}
-
 	async getInput(namespace: string): Promise<string[]> {
 		const input: string[] = await db.get(`input_${namespace}`) || [];
 		if (input.length === 0) return ['x,'];
