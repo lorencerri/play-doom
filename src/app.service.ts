@@ -15,7 +15,7 @@ export class AppService {
 	}
 
 	validateFiletype(type: string): void {
-		if (!['.png', '.gif'].includes(type)) throw new BadRequestException("query.type is invalid")
+		if (!['png', 'gif'].includes(type)) throw new BadRequestException("query.type is invalid")
 	}
 
 	validateNamespace(namespace: string): void {
