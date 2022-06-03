@@ -28,6 +28,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.5.5",
+    "ts-md5": "^1.2.11",
     "ultimate-text-to-image": "^1.0.0"
   },
   "devDependencies": {

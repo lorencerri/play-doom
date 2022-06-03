@@ -1,6 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { UltimateTextToImage } from 'ultimate-text-to-image';
 import { exec } from 'child_process';
+import { QuickDB } from 'quick.db';
+
+const db = new QuickDB();
 
 @Injectable()
 export class AppService {
@@ -8,18 +11,21 @@ export class AppService {
 		return 'Hello World!';
 	}
 
-	validateNamespace(namespace: string): string {
-		if (namespace.length === 0) return "Namespace cannot be empty.";
-		if (namespace.length > 32) return "Namespace cannot be longer than 32 characters.";
-		if (!/^[a-zA-Z0-9_]+$/.test(namespace)) return "Invalid characters in namespace.";
-		return "";
+	async getInput(namespace: string): Promise<string[]> {
+		const input: string[] = await db.get(`input_${namespace}`) || [];
+		return ['x,', ...input];
 	}
 
-	validateInput(input: string): string {
-		if (input.length === 0) return "Input cannot be empty.";
-		if (input.length > 1024) return "Input cannot be longer than 1024 characters.";
-		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) return "Invalid characters in input.";
-		return "";
+	validateNamespace(namespace: string): void {
+		if (namespace.length === 0) throw new BadRequestException("Namespace cannot be empty.")
+		if (namespace.length > 32) throw new BadRequestException("Namespace cannot be longer than 32 characters.")
+		if (!/^[a-zA-Z0-9_]+$/.test(namespace)) throw new BadRequestException("Invalid characters in namespace.")
+	}
+
+	validateInput(input: string): void {
+		if (input.length === 0) throw new BadRequestException("Input cannot be empty.");
+		if (input.length > 1024) throw new BadRequestException("Input cannot be longer than 1024 characters.");
+		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in input.");
 	}
 
 	getReplayExecString(framerate = 35, outputFile: string, input = ','): string {
@@ -35,19 +41,12 @@ export class AppService {
 		if (execStr.length === 0) throw new InternalServerErrorException("execStr cannot be empty.");
 		return new Promise((resolve, reject) => {
 			const process = exec(execStr);
-			let output = "";
 
-			process.stderr.on('data', (data) => {
-				console.log(data);
-				output += data
-			});
-			process.stdout.on('data', (data) => {
-				console.log(data);
-				output += data
-			});
-			process.on('exit', () => resolve(output));
-			process.on('close', () => resolve(output));
-			process.on('error', (err) => reject(err));
+			process.stderr.on('data', console.log);
+			process.stdout.on('data', console.log);
+			process.on('exit', () => resolve(""));
+			process.on('close', () => resolve(""));
+			process.on('error', (err) => resolve(err.message));
 		})
 	}
 
