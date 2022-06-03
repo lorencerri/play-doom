@@ -23,15 +23,14 @@
 
 - <a href="https://doom-api.plexidev.org/input/github/reset/?callback=https://github.com/lorencerri">Reset Game</a>
 
-### Stats
-
-<img src="https://doom-api.plexidev.org/stats" />
-
 **## END_GAME ##**
 
 ## play-doom
 
 An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomreplay), enter the submodule for more information.
+
+**Statistics**
+<img src="https://doom-api.plexidev.org/stats" />
 
 **Endpoints**
 
