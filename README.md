@@ -1,6 +1,6 @@
 **Play Doom!**
 
-!()["https://doom-api.plexidev.org/frame/github?type=.gif"]<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
+!()[https://doom-api.plexidev.org/frame/github?type=.gif]<br /><img src="https://doom-api.plexidev.org/input/github?image=true" />
 
 ### Controls (<a href="https://doom-api.plexidev.org/input/github/rewind/?callback=https://github.com/lorencerri">rewind</a>)
 
