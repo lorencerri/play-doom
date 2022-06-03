@@ -100,7 +100,7 @@ export class AppService {
 	}
 
 	async generateVideo(namespace: string, input: string[], type: 'current' | 'full'): Promise<any> {
-		const execStr = this.getReplayExecString(10000, 1, 20, `${dataDir}/${type}_${namespace}.mp4`, input.join(''));
+		const execStr = this.getReplayExecString(10000, 1, 35, `${dataDir}/${type}_${namespace}.mp4`, input.join(''));
 		const err = await this.execWithCallback(execStr);
 		if (err) throw new InternalServerErrorException(err);
 	}
