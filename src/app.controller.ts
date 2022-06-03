@@ -32,8 +32,8 @@ export class AppController {
 		if (curHash != inputHash) {
 			const frameCount = type === 'png' ? 1 : Math.min(input[input.length - 1].length, 16);
 			const nthframe = type === 'png' ? 1 : 2;
-			const execStr = this.appService.getReplayExecString(frameCount, nthframe, 20, `${dataDir}/frame_${namespace}.${type}`, input.join(''));
 
+			const execStr = this.appService.getReplayExecString(frameCount, nthframe, 20, `${dataDir}/frame_${namespace}.${type}`, input.join(''));
 			const err = await this.appService.execWithCallback(execStr);
 			if (err) throw new InternalServerErrorException(err);
 

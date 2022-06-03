@@ -27,7 +27,7 @@ export class AppService {
 	validateInput(input: string): void {
 		if (input.length === 0) throw new BadRequestException("query.keys cannot be empty.");
 		if (input.length > 1024) throw new BadRequestException("query.keys cannot be longer than 1024 characters.");
-		if (!/^[,xelrudaspftynUDLR<>2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in query.keys.");
+		if (!/^[,xelrudaspftynUDLRjk2-7]+$/.test(input)) throw new BadRequestException("Invalid characters in query.keys.");
 	}
 
 	getReplayExecString(nrecord = 1, nthframe = 1, framerate = 35, outputFile: string, input = ','): string {
@@ -36,7 +36,7 @@ export class AppService {
 			` -nrecord ${nrecord}` +
 			` -nthframe ${nthframe}` +
 			` -framerate ${framerate}` +
-			' -render_frame -render_input -render_username' +
+			' -render_frame' +
 			` -output ${outputFile}` +
 			` -input ${input}`
 	}
@@ -77,8 +77,8 @@ export class AppService {
 		if (input instanceof Array) input = input.join('');
 
 		const split = input
-			.replace(/(?<=[xelrudaspftynUDLR<>2-7]),/g, '') // Removes all idles, if preceded by a different key
-			.match(/([,xelrudaspftynUDLR<>2-7])\1*/g) || []; // Splits into groups of consecutive keys
+			.replace(/(?<=[xelrudaspftynUDLRjk2-7]),/g, '') // Removes all idles, if preceded by a different key
+			.match(/([,xelrudaspftynUDLRjk2-7])\1*/g) || []; // Splits into groups of consecutive keys
 
 		const repeating: [string, number][] = split.map((i) => [i.charAt(0), i.length]); // [ [key, length], [key, length], ... ]
 
@@ -108,8 +108,8 @@ export class AppService {
 			'D': "Shift + Down Arrow",
 			'L': "Shift + Left Arrow",
 			'R': "Shift + Right Arrow",
-			'<': "Strafe Left",
-			'>': "Strafe Right",
+			'j': "Strafe Left",
+			'k': "Strafe Right",
 			'y': 'Yes',
 			'n': 'No',
 			'2': 'Item Slot 2',
