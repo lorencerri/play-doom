@@ -175,7 +175,7 @@ export class AppService {
 	}
 
 	convertKeyToName(key: string): string {
-		const str: string = {
+		return {
 			',': 'Idle',
 			'x': 'Escape',
 			'e': 'Enter',
@@ -202,8 +202,6 @@ export class AppService {
 			'5': 'Item Slot 5',
 			'6': 'Item Slot 6',
 			'7': 'Item Slot 7',
-		}[key];
-
-		return str || "Unknown";
+		}[key] || "Unknown";
 	}
 }
