@@ -1,11 +1,21 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, StreamableFile } from '@nestjs/common';
 import { UltimateTextToImage } from 'ultimate-text-to-image';
 import { exec } from 'child_process';
-import { promises as fs } from 'fs';
+import { createReadStream, promises as fs } from 'fs';
 import { QuickDB } from 'quick.db';
 
 const db = new QuickDB();
 const dataDir = './data';
+
+export interface HttpRange {
+	start: number;
+	end?: number;
+}
+
+export interface StreamRange {
+	start: number;
+	end: number;
+}
 
 @Injectable()
 export class AppService {
@@ -56,13 +66,72 @@ export class AppService {
 		})
 	}
 
-	getUncachedHeader(contentType: string, filename: string, attachment = true): any {
+	getUncachedHeader(contentType: string, filename: string, attachment = true, merge = {}): any {
 		return {
 			'Content-Type': contentType,
 			'Content-Disposition': `${attachment ? 'attachment;' : ''} filename="${filename}"`,
 			'Cache-Control': 'no-cache,max-age=0',
-			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT'
+			'Expires': 'Sun, 06 Jul 2014 07:27:43 GMT',
+			...merge
 		}
+	}
+
+	parseRangeHeader(header?: string): HttpRange[] | undefined {
+		if (header === undefined || !header.startsWith("bytes=")) return undefined;
+		const ranges = header.replace("bytes=", "").split(",")
+			.map((range): HttpRange => {
+				if (!range.includes("-")) {
+					const start = this.parseRangePart(range);
+					if (start === undefined) return undefined;
+					return { start };
+				}
+				const [startRaw, endRaw] = range.split("-");
+				const start = this.parseRangePart(startRaw);
+				const end = this.parseRangePart(endRaw);
+				if (start === undefined || (end !== undefined && start > end)) return undefined;
+				return { start, end };
+			});
+		const includesNonZeroRange = ranges.some(({ start, end }) => (end === undefined || start !== end));
+		if (!includesNonZeroRange) return undefined;
+		return ranges;
+	}
+
+	calculateStreamRange(size: number, httpRange: HttpRange): StreamRange {
+		const lastByte = size - 1;
+		const start = httpRange.start >= lastByte ? lastByte : httpRange.start;
+		const chunkSize = Math.min(500000, lastByte - start, (httpRange.end ?? lastByte) - start);
+		const end = start + chunkSize;
+		return { start, end };
+	}
+
+	parseRangePart(raw?: string): number | undefined {
+		if (raw === undefined) return;
+		const parsed = parseInt(raw, 10);
+		if (isNaN(parsed)) return;
+		return parsed;
+	}
+
+	async streamVideoWithOptionalRange(filePath: string, res: any, range: any) {
+		const file = await fs.readFile(filePath);
+		const httpRanges = this.parseRangeHeader(range);
+		const streamRange = httpRanges && this.calculateStreamRange(file.byteLength, httpRanges[0]);
+		const readStream = createReadStream(filePath, streamRange);
+		const fileName = filePath.split('/').pop();
+
+		if (streamRange) {
+			res.status(206).set(this.getUncachedHeader('video/mp4', fileName, false, {
+				"Content-Range": `bytes ${streamRange.start}-${streamRange.end}/${file.byteLength}`,
+				"Accept-Ranges": "bytes",
+				"Content-Length": streamRange.end - streamRange.start + 1,
+			}));
+			return new StreamableFile(readStream);
+		}
+
+		res.set(this.getUncachedHeader('video/mp4', fileName, false, {
+			"Content-Length": file.byteLength,
+			"Content-Type": "video/mp4"
+		}));
+		return new StreamableFile(readStream);
 	}
 
 	getImageFromText(input: string): UltimateTextToImage {

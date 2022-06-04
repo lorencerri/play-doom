@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, InternalServerErrorException, Param, Query, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, InternalServerErrorException, Param, Query, Headers, Req, Res, StreamableFile } from '@nestjs/common';
 import { QuickDB } from 'quick.db';
 import { AppService } from './app.service';
 import { promises as fs } from 'fs';
@@ -93,7 +93,7 @@ export class AppController {
 	}
 
 	@Get('/video/:namespace/current')
-	async getCurrentVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+	async getCurrentVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res, @Headers("range") range?: string) {
 		this.appService.validateNamespace(namespace);
 
 		const input = await this.appService.getInput(namespace);
@@ -105,13 +105,11 @@ export class AppController {
 			await db.set(`currentVideoOutdated_${namespace}`, false);
 		}
 
-		const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
-		res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
-		return new StreamableFile(file);
+		return this.appService.streamVideoWithOptionalRange(`${dataDir}/current_${namespace}.mp4`, res, range);
 	}
 
 	@Get('/video/:namespace/full')
-	async getFullVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+	async getFullVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res, @Headers("range") range?: string) {
 		this.appService.validateNamespace(namespace);
 
 		const currentExists = await this.appService.canAccessFile(`${dataDir}/current_${namespace}.mp4`);
@@ -124,19 +122,12 @@ export class AppController {
 			await db.set(`currentVideoOutdated_${namespace}`, false);
 		}
 
-		if (!fullExists) {
-			const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
-			res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
-			return new StreamableFile(file);
-		}
-
-		const file = await fs.readFile(`${dataDir}/full_${namespace}.mp4`);
-		res.set(this.appService.getUncachedHeader('video/mp4', `full_${namespace}.mp4`, false));
-		return new StreamableFile(file);
+		if (!fullExists) return this.appService.streamVideoWithOptionalRange(`current_${namespace}.mp4`, res, range);
+		return this.appService.streamVideoWithOptionalRange(`${dataDir}/full_${namespace}.mp4`, res, range);
 	}
 
 	@Get('/video/:namespace/combined')
-	async getCombinedVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res) {
+	async getCombinedVideo(@Param('namespace') namespace = "", @Res({ passthrough: true }) res, @Headers("range") range?: string) {
 		this.appService.validateNamespace(namespace);
 
 		const currentExists = await this.appService.canAccessFile(`${dataDir}/current_${namespace}.mp4`);
@@ -152,11 +143,7 @@ export class AppController {
 			await db.set(`currentVideoOutdated_${namespace}`, false);
 		}
 
-		if (!fullExists || fullOutdated) {
-			const file = await fs.readFile(`${dataDir}/current_${namespace}.mp4`);
-			res.set(this.appService.getUncachedHeader('video/mp4', `current_${namespace}.mp4`, false));
-			return new StreamableFile(file);
-		}
+		if (!fullExists || fullOutdated) return this.appService.streamVideoWithOptionalRange(`${dataDir}/current_${namespace}.mp4`, res, range);
 
 		if (!combinedExists || combinedOutdated) {
 			await fs.writeFile(`${dataDir}/files.txt`, `file 'full_${namespace}.mp4'\nfile 'current_${namespace}.mp4'`, 'utf8');
@@ -166,9 +153,7 @@ export class AppController {
 			await db.set(`combinedOutdated_${namespace}`, false);
 		}
 
-		const file = await fs.readFile(`${dataDir}/combined_${namespace}.mp4`);
-		res.set(this.appService.getUncachedHeader('video/mp4', `combined_${namespace}.mp4`, false));
-		return new StreamableFile(file);
+		return this.appService.streamVideoWithOptionalRange(`${dataDir}/combined_${namespace}.mp4`, res, range);
 	}
 
 	@Get('/input/:namespace/append')
