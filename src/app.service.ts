@@ -21,8 +21,8 @@ export interface StreamRange {
 export class AppService {
 	async getInput(namespace: string): Promise<string[]> {
 		const input: string[] = await db.get(`input_${namespace}`) || [];
-		if (input.length === 0) return ['x,'];
-		else if (input[0] != 'x,') return ['x,'].concat(input);
+		if (input.length === 0) return ['x,e,e,e,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'];
+		else if (input[0] != 'x,') return ['x,e,e,e,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,'].concat(input);
 		else return input;
 	}
 
@@ -57,9 +57,10 @@ export class AppService {
 		if (execStr.length === 0) throw new InternalServerErrorException("execStr cannot be empty.");
 		return new Promise((resolve, reject) => {
 			const process = exec(execStr);
+			console.log(`Process launched: ${execStr}`)
 
-			process.stderr.on('data', console.log);
-			process.stdout.on('data', console.log);
+			//process.stderr.on('data', console.log);
+			//process.stdout.on('data', console.log);
 			process.on('exit', () => resolve(""));
 			process.on('close', () => resolve(""));
 			process.on('error', (err) => resolve(err.message));
