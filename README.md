@@ -35,8 +35,6 @@
 
 An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomreplay), enter the submodule for more information.
 
-> You can add this to your own GitHub README as well by changing the `/github/` in the URL to your own namespace!
-
 **Statistics**
 
 <img src="https://doom-api.plexidev.org/stats" />
