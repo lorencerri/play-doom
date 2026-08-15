@@ -9,11 +9,12 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun --watch run src/index.ts",
-    "test": "bun test",
+    "test": "bun test ./test",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "pino": "^9.6.0",
+    "sharp": "^0.35.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {

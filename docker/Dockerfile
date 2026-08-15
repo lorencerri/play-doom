@@ -19,8 +19,12 @@ RUN make -C doomgeneric -f Makefile.dr LDFLAGS="-Wl,--gc-sections"
 # --- Stage 2: runtime -------------------------------------------------------
 FROM oven/bun:1-slim AS runtime
 
+# fonts-dejavu-core is not optional: sharp renders the input-history and stats
+# images from an SVG, and with no font installed fontconfig resolves nothing and
+# the text comes out blank on an otherwise valid PNG. The layout in
+# render/text-image.ts assumes DejaVu Sans Mono's advance width specifically.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	ffmpeg \
+	ffmpeg fonts-dejavu-core \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

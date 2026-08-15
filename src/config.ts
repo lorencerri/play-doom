@@ -3,7 +3,7 @@ import { z } from 'zod';
 const schema = z.object({
 	PORT: z.coerce.number().int().positive().default(6677),
 	DATA_DIR: z.string().default('./data'),
-	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
 
 	// Paths baked into the Docker image; overridable for local dev.
 	DOOMGENERIC_BIN: z.string().default('./doomreplay/doomgeneric/doomgeneric'),

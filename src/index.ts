@@ -5,7 +5,11 @@ import { logger } from './logger.ts';
 
 const server = Bun.serve({
 	port: config.PORT,
-	routes,
+	// The table is built from portable (Request, params) handlers; Bun's own Routes
+	// type is generic over each literal path pattern and can't infer through that
+	// indirection. This cast is the one place the two representations meet.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	routes: routes as any,
 	fetch: notFound,
 	error(err) {
 		logger.error({ err }, 'unhandled server error');
