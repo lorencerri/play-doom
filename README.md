@@ -81,6 +81,13 @@ Beyond that the render queue sheds load rather than growing: if it saturates, a 
 that already has a rendered frame gets that frame back, stale by whatever arrived during
 the overload, instead of a broken image.
 
+The same holds for a render that fails outright — a timed-out engine, a dead ffmpeg, a full
+disk. The last good frame is served instead of an error, and `/health` reports which
+namespaces are failing repeatedly, how many times in a row, and what the last error said.
+Degraded rendering is reported at 200 rather than 503: the dependencies are fine and the app
+is still serving, and a supervisor restart cannot fix an input that reproducibly breaks the
+engine.
+
 A single run is capped at `MAX_BUFFER_TOKENS` frames. Real runs sit in the hundreds, so
 the default of 100,000 is roughly 200x headroom — it exists so a buffer cannot be driven
 to a length that makes every render slow for everyone.

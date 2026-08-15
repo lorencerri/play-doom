@@ -12,6 +12,7 @@ import { overloaded } from '../http/errors.ts';
 import { fileExists } from '../http/serve.ts';
 import { renderFrame, renderVideo } from './doom.ts';
 import { concat } from './ffmpeg.ts';
+import { recordRenderFailure, recordRenderSuccess } from './health.ts';
 import { enqueue, QueueFullError } from './queue.ts';
 
 export const paths = {
@@ -72,18 +73,24 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 
 			setRenderHash(namespace, artifact, hash);
 		});
+		recordRenderSuccess(namespace);
 	} catch (err) {
-		if (!(err instanceof QueueFullError)) throw err;
+		// Any failed render, not just a saturated queue: a timed-out doomgeneric, an
+		// ffmpeg that died, a full disk. In every case a previously rendered frame is
+		// stale only by what arrived since, which beats a broken image on a profile
+		// README that thousands of page views will hit.
+		const stale = await fileExists(outputPath);
+		recordRenderFailure(namespace, err, stale);
 
-		// A saturated queue is not a reason to break the README. A previously rendered
-		// frame is stale by exactly the keys that arrived during the overload, which is
-		// a far better answer than a broken image.
-		if (await fileExists(outputPath)) {
-			logger.warn({ namespace, type, waiting: err.waiting }, 'queue full, serving the previous frame');
+		if (stale) {
+			logger.warn({ namespace, type, err }, 'render failed, serving the previous frame');
 			return outputPath;
 		}
 
-		throw overloaded('too many renders in progress, try again shortly');
+		// Nothing usable on disk, so the caller has to hear about it. A saturated queue
+		// is explicitly retryable; anything else is a genuine fault.
+		if (err instanceof QueueFullError) throw overloaded('too many renders in progress, try again shortly');
+		throw err;
 	}
 
 	return outputPath;

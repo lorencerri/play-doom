@@ -1,6 +1,8 @@
 import { access, constants, mkdir, rm, writeFile } from 'node:fs/promises';
 import { config } from '../config.ts';
 import { db } from '../db.ts';
+import { degradedNamespaces, renderHealth } from '../render/health.ts';
+import { queueDepth } from '../render/queue.ts';
 
 type Check = { name: string; ok: boolean; error?: string };
 
@@ -47,5 +49,27 @@ export async function healthRoute(): Promise<Response> {
 	const checks = await Promise.all([checkDb(), checkWad(), checkDoomgeneric(), checkDataDirWritable()]);
 	const healthy = checks.every((c) => c.ok);
 
-	return Response.json({ status: healthy ? 'ok' : 'unhealthy', checks }, { status: healthy ? 200 : 503 });
+	const degraded = degradedNamespaces();
+
+	// Degraded rendering does not make the process unhealthy: the dependencies are all
+	// fine and the app is still serving. It would be wrong to have a supervisor restart
+	// on this — a restart cannot fix an input that reproducibly breaks the engine. So it
+	// is reported at 200, and only the dependency checks can fail the endpoint.
+	return Response.json(
+		{
+			status: healthy ? 'ok' : 'unhealthy',
+			checks,
+			render: {
+				queue: queueDepth(),
+				degraded: degraded.map((record) => ({
+					namespace: record.namespace,
+					consecutiveFailures: record.consecutiveFailures,
+					lastError: record.lastError,
+					servedStale: record.servedStale,
+				})),
+				namespaces: renderHealth().length,
+			},
+		},
+		{ status: healthy ? 200 : 503 },
+	);
 }
