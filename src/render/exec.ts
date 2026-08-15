@@ -32,7 +32,7 @@ export async function run(
 	label: string,
 	env?: Record<string, string>,
 	timeoutMs: number = config.RENDER_TIMEOUT_MS,
-): Promise<void> {
+): Promise<string> {
 	const start = performance.now();
 	let timedOut = false;
 
@@ -94,4 +94,8 @@ export async function run(
 	logger.trace({ label, bin, stdout: outTail }, 'subprocess output');
 
 	logger.debug({ label, bin, ms }, 'subprocess completed');
+
+	// Returned rather than discarded: doomgeneric reports the final game state here
+	// (see DR_PrintSummary), which is the only channel back from the engine.
+	return stdout;
 }

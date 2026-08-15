@@ -1,7 +1,9 @@
 import { getMetaStats, type NamespaceStats } from '../domain/meta.ts';
 import { getStats } from '../domain/state.ts';
+import { getStatus } from '../domain/status.ts';
 import { boolParam } from '../http/query.ts';
 import { png } from '../http/serve.ts';
+import { levelName } from '../render/summary.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 // The stats image is rendered in a monospace font, so columns can be aligned by
@@ -12,6 +14,16 @@ const COLUMNS: { header: string; width: number; of: (row: NamespaceStats) => str
 	{ header: 'Keys', width: 9, of: (row) => String(row.keysPressed) },
 	{ header: 'Rewinds', width: 9, of: (row) => String(row.rewinds) },
 	{ header: 'Runs', width: 6, of: (row) => String(row.runs) },
+	// Where the namespace actually is right now, straight from the engine's own
+	// end-of-replay report rather than anything the API infers.
+	{
+		header: 'Level',
+		width: 8,
+		of: (row) => {
+			const status = getStatus(row.namespace);
+			return (status && levelName(status)) ?? '-';
+		},
+	},
 ];
 
 function headerRow(): string {
@@ -26,7 +38,9 @@ function namespaceRow(row: NamespaceStats): string {
 		// The namespace is left-aligned as a label; every count is right-aligned so
 		// the digits line up down the column.
 		return column.header === 'Namespace' ? value.padEnd(column.width) : value.padStart(column.width);
-	}).join('');
+	})
+		.join('')
+		.trimEnd();
 }
 
 function statsText(stats: ReturnType<typeof getStats>, meta: ReturnType<typeof getMetaStats>): string {

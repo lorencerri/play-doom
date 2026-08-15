@@ -51,6 +51,9 @@ GET /video/:namespace/combined # Returns a video of all the previous runs combin
 
 GET /frame/:namespace?type=gif # Returns the current frame
 
+GET /status/:namespace # Returns the live game state, best run and recent runs as JSON
+GET /status/:namespace?image=true&runs=5 # Returns the same as an image
+
 GET /input/:namespace?image=true # Returns an image or text
 GET /input/:namespace/reset?callback="" # Resets the input buffer
 GET /input/:namespace/append?keys=""&callback="" # Appends keys to the input buffer
@@ -68,6 +71,18 @@ run through a keyed hash whose salt is generated once per install and never leav
 database, and only that hash is stored — the address itself is not written anywhere. The
 count is taken from `/input/*` clicks only, because GitHub proxies README images through
 Camo, so `/frame` traffic is a handful of GitHub servers rather than visitors.
+
+**Where the game state comes from**
+
+The engine reports its own final state on stdout when a replay ends, and the API keeps it
+(`DR_SUMMARY` in `doomgeneric_dr.c` → `src/render/summary.ts`). Every render already
+replays the whole run to reach the current frame, so this is a by-product of work that was
+happening anyway rather than a second pass.
+
+That is what makes `/status/:namespace` possible: the level, timer, health and
+kill/item/secret counts are the engine's own numbers, so they cannot drift from what the
+rendered frame shows. Finished runs are recorded the same way when a run is archived, which
+is the only moment they can be captured — the input buffer is cleared immediately after.
 
 **Configuration**
 

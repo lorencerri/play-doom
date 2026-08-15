@@ -75,6 +75,50 @@ db.exec(`
 	);
 `);
 
+// Where each namespace currently stands, refreshed from the engine's own report on
+// every frame render (see render/summary.ts). A replay always runs to the end of the
+// input, so its final state is the current state — this costs no extra work.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS namespace_status (
+		namespace     TEXT PRIMARY KEY,
+		state         TEXT    NOT NULL,
+		episode       INTEGER,
+		map           INTEGER,
+		kills         INTEGER,
+		total_kills   INTEGER,
+		items         INTEGER,
+		total_items   INTEGER,
+		secrets       INTEGER,
+		total_secrets INTEGER,
+		tics          INTEGER,
+		health        INTEGER,
+		dead          INTEGER,
+		frames        INTEGER,
+		updated_at    INTEGER NOT NULL
+	);
+`);
+
+// One row per finished run, written when a run is archived. Where namespace_status is
+// the present, this is the past: what the player had achieved when they hit reset.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS run_history (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		namespace   TEXT    NOT NULL,
+		episode     INTEGER,
+		map         INTEGER,
+		kills       INTEGER,
+		total_kills INTEGER,
+		secrets     INTEGER,
+		tics        INTEGER,
+		health      INTEGER,
+		dead        INTEGER,
+		frames      INTEGER,
+		ended_at    INTEGER NOT NULL
+	);
+`);
+
+db.exec('CREATE INDEX IF NOT EXISTS run_history_namespace ON run_history (namespace, ended_at DESC);');
+
 // Small key/value side table. Currently holds only the player-id salt, which has to
 // outlive restarts — see http/client.ts for why it is generated rather than fixed.
 db.exec(`

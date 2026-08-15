@@ -93,6 +93,38 @@ static void renderText(uint32_t* screen, const char* text, int xoffs, int yoffs,
     }
 }
 
+/**
+ * play-doom: reports the final game state on stdout when a replay ends.
+ *
+ * Every render already replays the whole run to reach the current frame, so the
+ * engine knows the level, the score and whether the player is alive — it just drew
+ * those into pixels and threw the numbers away. Printing them costs nothing and lets
+ * the API keep them: the caller drains stdout already.
+ *
+ * One line, `key=value` pairs, prefixed so it can be picked out of doomgeneric's
+ * other chatter. Off a level (menu, title screen, intermission) the counters hold the
+ * *previous* level's values, so that case reports `state=menu` and nothing else
+ * rather than numbers that look real and are not.
+ */
+static void DR_PrintSummary(void) {
+    if (gamestate != GS_LEVEL) {
+        printf("DR_SUMMARY state=menu frames=%d\n", g_frame_id);
+        fflush(stdout);
+        return;
+    }
+
+    const player_t* plyr = &players[consoleplayer];
+
+    printf(
+        "DR_SUMMARY state=level episode=%d map=%d kills=%d totalkills=%d "
+        "items=%d totalitems=%d secrets=%d totalsecrets=%d tics=%d health=%d "
+        "dead=%d frames=%d\n",
+        gameepisode, gamemap, plyr->killcount, totalkills, plyr->itemcount,
+        totalitems, plyr->secretcount, totalsecret, leveltime, plyr->health,
+        plyr->playerstate == PST_DEAD ? 1 : 0, g_frame_id);
+    fflush(stdout);
+}
+
 static void addConvertedKeyToQueue(int pressed, unsigned char key) {
     unsigned short keyData = (pressed << 8) | key;
 
@@ -360,6 +392,7 @@ void DG_DrawFrame() {
             pclose(g_fp);
             g_fp = NULL;
         }
+        DR_PrintSummary();
         printf("Terminating ..\n");
         exit(0);
     }

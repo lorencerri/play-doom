@@ -1,6 +1,7 @@
 import { config } from '../config.ts';
 import { encoderEnv } from './encoding.ts';
 import { run } from './exec.ts';
+import { parseRunSummary, type RunSummary } from './summary.ts';
 
 // Frame renders replay at 20fps; videos at the engine's native 35. Both numbers
 // are carried over from the original and affect how the gif reads on the README.
@@ -35,20 +36,33 @@ function doomArgs(opts: { nrecord: number; nthframe: number; framerate: number; 
 	];
 }
 
-export async function renderFrame(opts: FrameOptions): Promise<void> {
-	await run(
+/**
+ * Both renders return the engine's end-of-replay summary when it reported one.
+ *
+ * A replay always runs to the end of the input, so the state it finishes in is the
+ * namespace's current state — the summary is a by-product of work already being done,
+ * not an extra pass. `undefined` means the engine printed nothing parseable, which
+ * callers treat as "no update" rather than an error: a missing statistic must never
+ * fail a render that otherwise produced a good frame.
+ */
+export async function renderFrame(opts: FrameOptions): Promise<RunSummary | undefined> {
+	const stdout = await run(
 		config.DOOMGENERIC_BIN,
 		doomArgs({ ...opts, framerate: FRAME_FRAMERATE }),
 		`doomgeneric frame → ${opts.outputPath}`,
 		encoderEnv(),
 	);
+
+	return parseRunSummary(stdout);
 }
 
-export async function renderVideo(input: string, outputPath: string): Promise<void> {
-	await run(
+export async function renderVideo(input: string, outputPath: string): Promise<RunSummary | undefined> {
+	const stdout = await run(
 		config.DOOMGENERIC_BIN,
 		doomArgs({ nrecord: VIDEO_MAX_FRAMES, nthframe: 1, framerate: VIDEO_FRAMERATE, outputPath, input }),
 		`doomgeneric video → ${outputPath}`,
 		encoderEnv(),
 	);
+
+	return parseRunSummary(stdout);
 }

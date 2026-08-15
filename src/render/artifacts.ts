@@ -5,6 +5,7 @@ import { getInput, getInputString } from '../domain/input.ts';
 import type { Filetype } from '../domain/keys.ts';
 import { addSegment, clearSegments, listSegments, nextSeq } from '../domain/segments.ts';
 import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
+import { recordRun, setStatus } from '../domain/status.ts';
 import { logger } from '../logger.ts';
 import { fileExists } from '../http/serve.ts';
 import { renderFrame, renderVideo } from './doom.ts';
@@ -55,12 +56,16 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 
 		const lastBatch = input[input.length - 1] ?? '';
 
-		await renderFrame({
+		const summary = await renderFrame({
 			nrecord: type === 'png' ? 1 : Math.min(lastBatch.length, MAX_GIF_FRAMES),
 			nthframe: type === 'png' ? 1 : 2,
 			outputPath,
 			input: joined,
 		});
+
+		// The replay just ran to the end of the buffer, so its final state is this
+		// namespace's current state — recording it here costs nothing extra.
+		if (summary) setStatus(namespace, summary);
 
 		setRenderHash(namespace, artifact, hash);
 	});
@@ -194,7 +199,11 @@ export async function archiveRun(namespace: string, input: string): Promise<void
 		const seq = nextSeq(namespace);
 		const segmentPath = paths.segment(namespace, seq);
 
-		await renderVideo(input, segmentPath);
+		const summary = await renderVideo(input, segmentPath);
+
+		// How the run that just ended actually went. This is the only moment it can be
+		// captured: the buffer is already cleared, so nothing later can replay it.
+		if (summary) recordRun(namespace, summary);
 
 		// Recorded only after a successful render, so a failed one leaves no row
 		// pointing at a partial file — the orphan is overwritten by the next attempt,

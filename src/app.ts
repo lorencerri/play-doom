@@ -6,6 +6,7 @@ import { frameRoute } from './routes/frame.ts';
 import { healthRoute } from './routes/health.ts';
 import { appendRoute, getInputRoute, resetRoute, rewindRoute } from './routes/input.ts';
 import { homeRoute, statsRoute } from './routes/stats.ts';
+import { statusRoute } from './routes/status.ts';
 import { combinedVideoRoute, currentVideoRoute, fullVideoRoute } from './routes/video.ts';
 
 // Handlers are plain web-standard functions taking (Request, params) so the app
@@ -81,6 +82,7 @@ export const routes = withTrailingSlash({
 	'/stats': wrap('stats', statsRoute),
 
 	'/frame/:namespace': wrap('frame', frameRoute),
+	'/status/:namespace': wrap('status', statusRoute),
 
 	'/input/:namespace': wrap('input.get', getInputRoute),
 	'/input/:namespace/append': wrap('input.append', appendRoute),
