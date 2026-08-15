@@ -1,3 +1,5 @@
+import { config } from './config.ts';
+import { resolveClientAddress, setClientAddress } from './http/client.ts';
 import { HttpError } from './http/errors.ts';
 import { logger } from './logger.ts';
 import { frameRoute } from './routes/frame.ts';
@@ -14,14 +16,30 @@ function paramsOf(req: Request): Record<string, string> {
 	return (req as Request & { params?: Record<string, string> }).params ?? {};
 }
 
+// Bun hands route handlers (request, server); `server.requestIP` is the only place
+// the socket peer is available. The resolved address is stashed on the request so
+// handlers keep the portable (request, params) shape — same trick Bun uses for
+// params. Readers use `clientAddressOf` from http/client.ts.
+type IPSource = { requestIP?: (req: Request) => { address: string } | null };
+
 // Wraps every handler with request logging and an error boundary. Nothing a route
 // throws should ever kill the process — the old app's crash cause #2 was exactly
 // that: an unhandled rejection after the response was already sent. Validation
 // failures become 4xx; everything else is logged with a stack trace and becomes a
 // 500, because an unexpected throw is a bug worth seeing in journalctl.
 function wrap(name: string, handler: RouteHandler): RouteHandler {
-	return async (req) => {
+	return async (req, params) => {
 		const start = performance.now();
+
+		// `params` is the Bun server object at runtime — the route table calls these
+		// with (request, server), while the handlers below take (request, params) and
+		// read the latter off the request. Guarded rather than cast, so this degrades
+		// to "no address" instead of throwing if that ever stops being true.
+		const source = params as unknown as IPSource | undefined;
+		const socketAddress =
+			typeof source?.requestIP === 'function' ? (source.requestIP(req)?.address ?? undefined) : undefined;
+		setClientAddress(req, resolveClientAddress(req, socketAddress, config.TRUST_PROXY));
+
 		try {
 			const res = await handler(req, paramsOf(req));
 			logger.info(

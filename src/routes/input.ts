@@ -1,6 +1,8 @@
 import { appendBatch, clearInput, getInput, getInputString, getStoredBatches, rewindKeys } from '../domain/input.ts';
 import { normalizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
+import { recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
 import { incrementStats, setFlags } from '../domain/state.ts';
+import { clientAddressOf } from '../http/client.ts';
 import { boolParam, intParam, stringParam } from '../http/query.ts';
 import { png, redirectTo, text } from '../http/serve.ts';
 import { logger } from '../logger.ts';
@@ -30,6 +32,9 @@ export async function appendRoute(req: Request, params: Record<string, string>):
 
 	appendBatch(namespace, keys);
 	incrementStats({ actions: 1, keysPressed: keys.length });
+	recordNamespaceStats(namespace, { actions: 1, keysPressed: keys.length });
+	recordInputVariant(keys);
+	recordPlayerAction(clientAddressOf(req));
 	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 
 	logger.info({ namespace, keys: keys.length }, 'input appended');
@@ -51,6 +56,8 @@ export async function rewindRoute(req: Request, params: Record<string, string>):
 	const removed = rewindKeys(namespace, amount);
 
 	incrementStats({ rewinds: 1 });
+	recordNamespaceStats(namespace, { rewinds: 1 });
+	recordPlayerAction(clientAddressOf(req));
 	if (removed > 0) setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 
 	logger.info({ namespace, requested: amount, removed }, 'input rewound');
@@ -71,6 +78,10 @@ export async function resetRoute(req: Request, params: Record<string, string>): 
 	const hadPlay = stored.some((batch) => tokenize(batch).length > 0);
 
 	clearInput(namespace);
+	// A reset only counts as a completed run if something was actually played —
+	// resetting an already-empty buffer is a no-op, not a run.
+	recordNamespaceStats(namespace, { runs: hadPlay ? 1 : 0 });
+	recordPlayerAction(clientAddressOf(req));
 	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 
 	// Queued before the archive on purpose. Both are detached, but they share the

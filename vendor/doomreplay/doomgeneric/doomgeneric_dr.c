@@ -8,6 +8,7 @@
 #include "doomgeneric.h"
 #include "doomkeys.h"
 #include "doomreplay.h"
+#include "doomstat.h"
 #include "dr_font.h"
 #include "i_timer.h"
 
@@ -220,10 +221,13 @@ void DG_DrawFrame() {
             }
         }
         if (g_fp) {
-            char t[32];
+            // play-doom: was char[32]. "F:<frame> I:" is already 8-12 bytes and the
+            // block below strcat's one byte per held key, of which there are 25 —
+            // a frame with enough keys down overran the buffer.
+            char t[64];
             t[0] = 0;
             if (g_replay_data.render_frame) {
-                snprintf(t, 32, "F:%d I:", g_frame_id);
+                snprintf(t, sizeof(t), "F:%d I:", g_frame_id);
             }
             if (g_replay_data.render_input) {
                 unsigned char* pressed =
@@ -256,6 +260,26 @@ void DG_DrawFrame() {
             }
 
             renderText(DG_ScreenBuffer, t, 2, 12, 0);
+
+            // play-doom: the status bar already reports health, ammo, armour and
+            // weapons, so this adds only what is otherwise invisible in a frame —
+            // which level, how long the run has been going, and how much of the
+            // map has been cleared. Gated on GS_LEVEL because these globals hold
+            // the previous level's values while a menu or the title screen is up.
+            if (g_replay_data.render_status && gamestate == GS_LEVEL) {
+                const player_t* plyr = &players[consoleplayer];
+                const int secs = leveltime / TICRATE;
+                char s[64];
+
+                snprintf(s, sizeof(s), "E%dM%d %d:%02d", gameepisode, gamemap,
+                         secs / 60, secs % 60);
+                renderText(DG_ScreenBuffer, s, 2, 12 + FONT_SIZE_Y, 0);
+
+                snprintf(s, sizeof(s), "K %d/%d I %d/%d S %d/%d", plyr->killcount,
+                         totalkills, plyr->itemcount, totalitems,
+                         plyr->secretcount, totalsecret);
+                renderText(DG_ScreenBuffer, s, 2, 12 + 2 * FONT_SIZE_Y, 0);
+            }
 
             if (g_replay_data.render_username) {
                 while (

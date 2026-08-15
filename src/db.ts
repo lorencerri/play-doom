@@ -60,4 +60,50 @@ db.exec(`
 `);
 db.exec(`INSERT OR IGNORE INTO stats (id) VALUES (1);`);
 
+// Small key/value side table. Currently holds only the player-id salt, which has to
+// outlive restarts — see http/client.ts for why it is generated rather than fixed.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS meta (
+		key   TEXT PRIMARY KEY,
+		value TEXT NOT NULL
+	);
+`);
+
+// One row per distinct player. `id` is a keyed hash of the client address, never the
+// address itself, so this counts people without retaining a record of who they were.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS players (
+		id         TEXT PRIMARY KEY,
+		first_seen INTEGER NOT NULL,
+		last_seen  INTEGER NOT NULL,
+		actions    INTEGER NOT NULL DEFAULT 0
+	);
+`);
+
+// One row per distinct key sequence ever appended. The README publishes a fixed menu
+// of control links, so this measures how much of that menu actually gets used, and
+// surfaces anything hand-crafted outside it.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS input_variants (
+		keys       TEXT PRIMARY KEY,
+		uses       INTEGER NOT NULL DEFAULT 0,
+		first_seen INTEGER NOT NULL,
+		last_seen  INTEGER NOT NULL
+	);
+`);
+
+// The `stats` table above is a single global row carried over from the original app.
+// This is the same counters split per namespace, plus completed runs, so one busy
+// namespace no longer hides every other.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS namespace_stats (
+		namespace    TEXT PRIMARY KEY,
+		actions      INTEGER NOT NULL DEFAULT 0,
+		keys_pressed INTEGER NOT NULL DEFAULT 0,
+		rewinds      INTEGER NOT NULL DEFAULT 0,
+		runs         INTEGER NOT NULL DEFAULT 0,
+		updated_at   INTEGER NOT NULL
+	);
+`);
+
 logger.info({ path: `${config.DATA_DIR}/play-doom.sqlite` }, 'database ready');

@@ -45,6 +45,23 @@ export const schema = z.object({
 		)
 		.pipe(z.array(z.enum(FILETYPES))),
 
+	// Whether to believe the client-address headers the proxy sets. True is correct
+	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
+	// Set false if the app is ever exposed directly, where those headers would be
+	// attacker-supplied and would let anyone inflate the unique-player count.
+	TRUST_PROXY: z
+		.enum(['true', 'false'])
+		.default('true')
+		.transform((value) => value === 'true'),
+
+	// Draw level, elapsed time and kill/item/secret progress under the frame counter.
+	// Doom's status bar already covers health, ammo and armour, so this adds only what
+	// a frame otherwise cannot show. Off puts the overlay back to just `F:<n> I:<keys>`.
+	FRAME_STATUS_OVERLAY: z
+		.enum(['true', 'false'])
+		.default('true')
+		.transform((value) => value === 'true'),
+
 	// Downscale width for the gif, or 0 to keep doomgeneric's native 640x400. 320
 	// gives Doom's true resolution and roughly a quarter of the pixels, at the cost
 	// of halving the overlay text (§1.3) — worth eyeballing before switching on.

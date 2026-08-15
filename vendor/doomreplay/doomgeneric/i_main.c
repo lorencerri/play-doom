@@ -143,6 +143,12 @@ int main(int argc, char **argv) {
         replay_data.render_username = 1;
     }
 
+    // render level, elapsed time and completion progress on the screen ?
+    replay_data.render_status = 0;
+    if (M_CheckParm("-render_status") > 0) {
+        replay_data.render_status = 1;
+    }
+
     const char *input = myargv[pidx_input + 1];
     printf("input: '%s'\n", input);
 

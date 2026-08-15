@@ -28,6 +28,8 @@ function doomArgs(opts: { nrecord: number; nthframe: number; framerate: number; 
 		'-nthframe', String(opts.nthframe),
 		'-framerate', String(opts.framerate),
 		'-render_frame',
+		// Bare flag, so it must be omitted entirely rather than passed as `false`.
+		...(config.FRAME_STATUS_OVERLAY ? ['-render_status'] : []),
 		'-output', opts.outputPath,
 		'-input', opts.input,
 	];

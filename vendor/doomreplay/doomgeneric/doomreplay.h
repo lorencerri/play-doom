@@ -53,6 +53,10 @@ typedef struct {
     int render_frame;
     int render_input;
     int render_username;
+    // play-doom: draw level, elapsed time and kill/item/secret progress under the
+    // frame counter. Doom's own status bar already shows health, ammo and armour,
+    // so the overlay deliberately covers only what the status bar does not.
+    int render_status;
 
     frame_data_t* frames;
     username_data_t* usernames;
