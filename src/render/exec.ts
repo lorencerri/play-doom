@@ -26,7 +26,7 @@ export class SubprocessError extends Error {
  * interpolated the namespace and the raw key buffer into a string handed to
  * `exec`, i.e. to `/bin/sh`.
  */
-export async function run(bin: string, args: string[], label: string): Promise<void> {
+export async function run(bin: string, args: string[], label: string, env?: Record<string, string>): Promise<void> {
 	const start = performance.now();
 	let timedOut = false;
 
@@ -35,7 +35,14 @@ export async function run(bin: string, args: string[], label: string): Promise<v
 	// non-zero exit so callers have one thing to handle.
 	let proc: Bun.Subprocess<'ignore', 'pipe', 'pipe'>;
 	try {
-		proc = Bun.spawn([bin, ...args], { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' });
+		proc = Bun.spawn([bin, ...args], {
+			stdin: 'ignore',
+			stdout: 'pipe',
+			stderr: 'pipe',
+			// Merged onto the parent environment rather than replacing it: doomgeneric
+			// still needs PATH to find ffmpeg, and HOME to resolve its config dir.
+			...(env ? { env: { ...process.env, ...env } } : {}),
+		});
 	} catch (err) {
 		logger.error({ label, bin, err }, 'subprocess failed to spawn');
 		throw new SubprocessError(`${label} could not start: ${String(err)}`, bin, null, '');

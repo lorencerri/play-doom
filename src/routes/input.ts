@@ -1,10 +1,10 @@
-import { appendBatch, clearInput, getInput, getStoredBatches, rewindKeys } from '../domain/input.ts';
+import { appendBatch, clearInput, getInput, getInputString, getStoredBatches, rewindKeys } from '../domain/input.ts';
 import { normalizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
 import { incrementStats, setFlags } from '../domain/state.ts';
 import { boolParam, intParam, stringParam } from '../http/query.ts';
 import { png, redirectTo, text } from '../http/serve.ts';
 import { logger } from '../logger.ts';
-import { archiveRun } from '../render/artifacts.ts';
+import { archiveRun, warmFrames } from '../render/artifacts.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 const MAX_REWIND = 1024;
@@ -34,6 +34,10 @@ export async function appendRoute(req: Request, params: Record<string, string>):
 
 	logger.info({ namespace, keys: keys.length }, 'input appended');
 
+	// Started, not awaited: the redirect should go out now, and the render races
+	// GitHub's image proxy rather than blocking it (plan 1.2).
+	warmFrames(namespace);
+
 	return redirectTo(stringParam(url, 'callback')) ?? text(`${keys} appended to ${namespace}`);
 }
 
@@ -51,6 +55,8 @@ export async function rewindRoute(req: Request, params: Record<string, string>):
 
 	logger.info({ namespace, requested: amount, removed }, 'input rewound');
 
+	if (removed > 0) warmFrames(namespace);
+
 	return redirectTo(stringParam(url, 'callback')) ?? text(`rewound ${removed} keys from ${namespace}`);
 }
 
@@ -61,11 +67,17 @@ export async function resetRoute(req: Request, params: Record<string, string>): 
 	// Capture before clearing: the archive renders this exact buffer while the next
 	// run is already free to start.
 	const stored = getStoredBatches(namespace);
-	const finishedRun = getInput(namespace).join('');
+	const finishedRun = getInputString(namespace);
 	const hadPlay = stored.some((batch) => tokenize(batch).length > 0);
 
 	clearInput(namespace);
 	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
+
+	// Queued before the archive on purpose. Both are detached, but they share the
+	// per-namespace queue, and archiving re-renders an entire run — putting the
+	// cheap opening frame behind it would leave the README stale for as long as
+	// that takes.
+	warmFrames(namespace);
 
 	if (hadPlay) {
 		// Deliberately not awaited — archiving re-renders the whole run and the click

@@ -1,4 +1,5 @@
 import { config } from '../config.ts';
+import { encoderEnv } from './encoding.ts';
 import { run } from './exec.ts';
 
 // Frame renders replay at 20fps; videos at the engine's native 35. Both numbers
@@ -37,6 +38,7 @@ export async function renderFrame(opts: FrameOptions): Promise<void> {
 		config.DOOMGENERIC_BIN,
 		doomArgs({ ...opts, framerate: FRAME_FRAMERATE }),
 		`doomgeneric frame → ${opts.outputPath}`,
+		encoderEnv(),
 	);
 }
 
@@ -45,5 +47,6 @@ export async function renderVideo(input: string, outputPath: string): Promise<vo
 		config.DOOMGENERIC_BIN,
 		doomArgs({ nrecord: VIDEO_MAX_FRAMES, nthframe: 1, framerate: VIDEO_FRAMERATE, outputPath, input }),
 		`doomgeneric video → ${outputPath}`,
+		encoderEnv(),
 	);
 }

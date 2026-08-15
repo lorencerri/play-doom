@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { clearInput, getStoredBatches } from '../src/domain/input.ts';
 import { getStats } from '../src/domain/state.ts';
+import { frameRoute } from '../src/routes/frame.ts';
 import { appendRoute, getInputRoute, resetRoute, rewindRoute } from '../src/routes/input.ts';
 import { homeRoute, statsRoute } from '../src/routes/stats.ts';
 
@@ -91,6 +92,33 @@ describe('GET /input/:namespace/append', () => {
 
 	test('rejects an empty batch', () => {
 		expect(appendRoute(get(`/input/${ns}/append`), params)).rejects.toThrow('query.keys cannot be empty.');
+	});
+});
+
+describe('eager rendering', () => {
+	// There is no doomgeneric binary in the test environment, so every eager render
+	// started by these routes fails. That is the case worth pinning: the render is
+	// detached work behind an already-sent response, and an unhandled rejection from
+	// exactly that shape of code is what killed the old process (crash cause #2).
+	test('append still succeeds when the eager render cannot run', async () => {
+		const res = await appendRoute(get(`/input/${ns}/append?keys=u,`), params);
+
+		expect(res.status).toBe(200);
+		expect(getStoredBatches(ns)).toEqual(['u,']);
+	});
+
+	test('reset still succeeds when the eager render cannot run', async () => {
+		await appendRoute(get(`/input/${ns}/append?keys=u,`), params);
+
+		const res = await resetRoute(get(`/input/${ns}/reset`), params);
+
+		expect(res.status).toBe(200);
+	});
+
+	test('the frame route still surfaces the failure to the caller', () => {
+		// The eager path swallows errors into the log; the request path must not, or
+		// a broken render would serve a stale frame with a 200 (crash cause #4).
+		expect(frameRoute(get(`/frame/${ns}`), params)).rejects.toThrow();
 	});
 });
 

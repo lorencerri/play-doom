@@ -33,7 +33,7 @@
 
 ## play-doom
 
-An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomreplay), enter the submodule for more information.
+An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomreplay), whose source is vendored under `vendor/doomreplay/` — see there for more information.
 
 **Statistics**
 
@@ -58,5 +58,6 @@ GET /input/:namespace/rewind?amount=1&callback="" # Rewinds the input buffer by 
 
 **Notes**
 
-- Use `git clone --recursive https://github.com/lorencerri/play-doom.git` to clone play-doom & doomreplay
+- A plain `git clone` is enough — doomreplay is vendored under `vendor/`, not a submodule
+- `doom1.wad` is not in the repo; put it at `vendor/doomreplay/doom1.wad` or set `DOOM1_WAD_PATH`
 - Use [vscode-drawio](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio) to open `play-doom.drawio` in vscode

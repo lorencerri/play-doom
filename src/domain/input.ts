@@ -30,9 +30,60 @@ const deleteBatch = db.query<never, [string, number]>('DELETE FROM inputs WHERE 
 const updateBatch = db.query<never, [string, string, number]>('UPDATE inputs SET keys = ? WHERE namespace = ? AND seq = ?');
 const deleteAll = db.query<never, [string]>('DELETE FROM inputs WHERE namespace = ?');
 
+/**
+ * Reconstructing the buffer is an ordered scan of every row for the namespace, and
+ * the callers that need it are the hot ones: the eager render asks for it twice per
+ * click (once per frame type), and the frame request asks again. Cache the scan and
+ * the joined string, and drop the entry whenever the buffer is written (plan 1.5).
+ *
+ * Safe because there is exactly one process holding exactly one connection to this
+ * database — the same property that fixed crash cause #3. If a second writer ever
+ * appears, this cache is the first thing that breaks.
+ */
+type CachedInput = { batches: string[]; joined: string };
+
+// Bounded so a burst of one-off namespaces cannot grow this without limit; entries
+// are cheap to rebuild, so evicting the oldest is enough.
+const MAX_CACHED_NAMESPACES = 256;
+const cache = new Map<string, CachedInput>();
+
+function readInput(namespace: string): CachedInput {
+	const cached = cache.get(namespace);
+	if (cached) return cached;
+
+	const batches = selectBatches.all(namespace).map((row) => row.keys);
+	const prefixed = batches[0] === 'x,' ? batches : [BOOTSTRAP_PREFIX, ...batches];
+	const entry: CachedInput = { batches, joined: prefixed.join('') };
+
+	if (cache.size >= MAX_CACHED_NAMESPACES) {
+		const oldest = cache.keys().next();
+		if (!oldest.done) cache.delete(oldest.value);
+	}
+	cache.set(namespace, entry);
+
+	return entry;
+}
+
+function invalidate(namespace: string): void {
+	cache.delete(namespace);
+}
+
 /** Stored batches only, oldest first — without the bootstrap prefix. */
 export function getStoredBatches(namespace: string): string[] {
-	return selectBatches.all(namespace).map((row) => row.keys);
+	// Copied, not shared: callers treat this as their own array, and a mutation
+	// reaching the cache would desynchronise it from the table silently.
+	return readInput(namespace).batches.slice();
+}
+
+/**
+ * The whole buffer as one string, exactly as doomgeneric replays it.
+ *
+ * Equivalent to `getInput(namespace).join('')` but served from the cache, which
+ * matters because joining is itself O(run length) and now happens several times per
+ * click.
+ */
+export function getInputString(namespace: string): string {
+	return readInput(namespace).joined;
 }
 
 /**
@@ -51,6 +102,7 @@ export function getInput(namespace: string): string[] {
 
 export function appendBatch(namespace: string, keys: string): void {
 	insertBatch.run(namespace, namespace, keys, Date.now());
+	invalidate(namespace);
 }
 
 /**
@@ -64,6 +116,16 @@ export function appendBatch(namespace: string, keys: string): void {
 export function rewindKeys(namespace: string, amount: number): number {
 	if (amount <= 0) return 0;
 
+	try {
+		return runRewind(namespace, amount);
+	} finally {
+		// In a finally so a transaction that throws part-way cannot leave the cache
+		// describing rows that were rolled back.
+		invalidate(namespace);
+	}
+}
+
+function runRewind(namespace: string, amount: number): number {
 	return db.transaction(() => {
 		let remaining = amount;
 
@@ -90,4 +152,5 @@ export function rewindKeys(namespace: string, amount: number): number {
 
 export function clearInput(namespace: string): void {
 	deleteAll.run(namespace);
+	invalidate(namespace);
 }

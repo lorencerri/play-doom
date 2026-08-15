@@ -11,7 +11,10 @@ services:
       RENDER_CONCURRENCY: 2
     volumes:
       - ../data:/app/data
-      - ../doomreplay/doom1.wad:/app/doomreplay/doom1.wad:ro
+      # doom1.wad is shareware and deliberately not in the repo, so its location is
+      # operator-specific. Override with DOOM1_WAD_PATH in docker/.env if it lives
+      # somewhere else on the host.
+      - ${DOOM1_WAD_PATH:-../vendor/doomreplay/doom1.wad}:/app/vendor/doomreplay/doom1.wad:ro
     mem_limit: 512m
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:6677/health').then(r => process.exit(r.ok ? 0 : 1))"]

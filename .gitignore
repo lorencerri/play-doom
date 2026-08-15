@@ -398,3 +398,12 @@ Temporary Items
 dist
 *.sqlite
 data/*
+
+# The doomgeneric source now lives in vendor/. This is the old submodule checkout,
+# left on disk so nothing is lost — safe to delete. Anchored with a leading slash:
+# unanchored, it would also match the vendored copy at vendor/doomreplay/.
+/doomreplay/
+
+# Build output from the vendored C sources. The sources themselves are tracked.
+vendor/**/*.o
+vendor/doomreplay/doomgeneric/doomgeneric

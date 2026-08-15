@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# --- Stage 1: build doomgeneric from the doomreplay submodule -------------
+# --- Stage 1: build doomgeneric from the vendored doomreplay source -------
 FROM debian:bookworm-slim AS doom-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-COPY doomreplay/doomgeneric ./doomgeneric
+# Vendored rather than a submodule: the encoder patch in doomgeneric_dr.c has to
+# ship with the API that sets DR_FFMPEG_ARGS_*, and a submodule would split that
+# one change across two repositories.
+COPY vendor/doomreplay/doomgeneric ./doomgeneric
 
 # Makefile.dr hardcodes `LDFLAGS+=-Wl,-dead_strip`, an Apple ld64 flag that GNU/lld
 # linkers on Linux reject outright. Command-line variables take precedence over the
@@ -34,13 +37,13 @@ RUN bun install --frozen-lockfile --production
 
 COPY src ./src
 COPY tsconfig.json ./
-COPY --from=doom-builder /build/doomgeneric/doomgeneric ./doomreplay/doomgeneric/doomgeneric
+COPY --from=doom-builder /build/doomgeneric/doomgeneric ./vendor/doomreplay/doomgeneric/doomgeneric
 
 # doom1.wad is not in the repo (shareware, licensing) and data/ is a live volume —
 # both are mounted at runtime via compose, not baked into the image.
 
-ENV DOOMGENERIC_BIN=/app/doomreplay/doomgeneric/doomgeneric
-ENV DOOM1_WAD=/app/doomreplay/doom1.wad
+ENV DOOMGENERIC_BIN=/app/vendor/doomreplay/doomgeneric/doomgeneric
+ENV DOOM1_WAD=/app/vendor/doomreplay/doom1.wad
 ENV DATA_DIR=/app/data
 ENV PORT=6677
 

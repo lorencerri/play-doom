@@ -1,10 +1,12 @@
+import { createHash } from 'node:crypto';
 import { rename, rm } from 'node:fs/promises';
 import { config } from '../config.ts';
-import { getInput } from '../domain/input.ts';
-import { getState, setFlags } from '../domain/state.ts';
+import { getInput, getInputString } from '../domain/input.ts';
+import { FILETYPES, type Filetype } from '../domain/keys.ts';
+import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
 import { logger } from '../logger.ts';
 import { fileExists } from '../http/serve.ts';
-import { renderVideo } from './doom.ts';
+import { renderFrame, renderVideo } from './doom.ts';
 import { concat } from './ffmpeg.ts';
 import { enqueue } from './queue.ts';
 
@@ -17,6 +19,76 @@ export const paths = {
 	tmp: (namespace: string, name: string) => `${config.DATA_DIR}/tmp_${name}_${namespace}.mp4`,
 };
 
+// A gif covers the last batch of keys, capped so a 50x idle link doesn't produce a
+// 50-frame animation. Carried over exactly — it decides how the README image reads.
+const MAX_GIF_FRAMES = 16;
+
+/**
+ * Renders `frame_<ns>.<type>` if the input buffer has moved since it was last made,
+ * and returns the path either way.
+ *
+ * The hash gate is the correctness check: identical input means the file on disk is
+ * still the right answer. The `fileExists` half is new — the original trusted the
+ * hash alone and would serve a file that had been deleted underneath it.
+ */
+export async function ensureFrame(namespace: string, type: Filetype): Promise<string> {
+	// `getInput` is still needed for the last batch specifically: on an untouched
+	// namespace it is the bootstrap prefix, and the gif length depends on that.
+	const input = getInput(namespace);
+	const joined = getInputString(namespace);
+	const hash = createHash('md5').update(joined).digest('hex');
+
+	const artifact = `frame.${type}`;
+	const outputPath = paths.frame(namespace, type);
+
+	const current = async () => getRenderHash(namespace, artifact) === hash && (await fileExists(outputPath));
+
+	if (await current()) return outputPath;
+
+	await enqueue(namespace, `frame:${type}`, async () => {
+		// Re-check inside the queue: an eager render kicked off by the click and a
+		// lazy one from the image request routinely race, and the loser should not
+		// redo the work it was waiting on.
+		if (await current()) return;
+
+		const lastBatch = input[input.length - 1] ?? '';
+
+		await renderFrame({
+			nrecord: type === 'png' ? 1 : Math.min(lastBatch.length, MAX_GIF_FRAMES),
+			nthframe: type === 'png' ? 1 : 2,
+			outputPath,
+			input: joined,
+		});
+
+		setRenderHash(namespace, artifact, hash);
+	});
+
+	return outputPath;
+}
+
+/**
+ * Starts rendering every frame type without waiting for the result (plan 1.2).
+ *
+ * Rendering used to begin when GitHub's image proxy fetched the frame, which put a
+ * full doomgeneric replay plus an encode on the viewer's critical path. Starting it
+ * when the key is appended means the proxy usually finds a finished file, and the
+ * click returns its redirect immediately either way.
+ *
+ * Errors terminate here on purpose. This is detached work behind an already-sent
+ * response; the lazy path in `ensureFrame` will retry on the next request, and an
+ * unhandled rejection from a detached job is what took the old process down
+ * (crash cause #2).
+ */
+export function warmFrames(namespace: string): void {
+	if (!config.EAGER_RENDER) return;
+
+	for (const type of FILETYPES) {
+		ensureFrame(namespace, type).catch((err) => {
+			logger.warn({ namespace, type, err }, 'eager frame render failed');
+		});
+	}
+}
+
 /** Renders `current_<ns>.mp4` if the buffer has moved since it was last made. */
 export async function ensureCurrentVideo(namespace: string): Promise<string> {
 	const path = paths.current(namespace);
@@ -28,7 +100,7 @@ export async function ensureCurrentVideo(namespace: string): Promise<string> {
 		// already running, and they would otherwise each redo the same work.
 		if (!getState(namespace).current_video_outdated && (await fileExists(path))) return;
 
-		await renderVideo(getInput(namespace).join(''), path);
+		await renderVideo(getInputString(namespace), path);
 		setFlags(namespace, { current_video_outdated: false });
 	});
 
