@@ -84,6 +84,9 @@ static void renderText(uint32_t* screen, const char* text, int xoffs, int yoffs,
                             col = (((29 * col) / 255) << 16) |
                                   (((161 * col) / 255) << 8) |
                                   ((242 * col) / 255);  // blue
+                        // play-doom: red, for states the player should not have to
+                        // read the text to notice — being dead, or nearly.
+                        if (ecol == 2) col = col << 16;
                         screen[(yoffs + y) * DOOMGENERIC_RESX +
                                (i * FONT_SIZE_X + xoffs + x)] = col;
                     }
@@ -341,10 +344,15 @@ void DG_DrawFrame() {
                 // A dead player is the one state the status bar cannot show — it keeps
                 // reporting 0% health with no indication the run is over, and the view
                 // just tilts to the floor. Say so.
+                // Dead, or under a third health, turns the line red. The status bar
+                // shows the number but nothing about it reads as urgent at a glance,
+                // and on a small README gif the number is barely legible.
+                const int hurt = plyr->playerstate == PST_DEAD || plyr->health <= 35;
+
                 snprintf(s, sizeof(s), "E%dM%d %d:%02d%s", gameepisode, gamemap,
                          secs / 60, secs % 60,
                          plyr->playerstate == PST_DEAD ? " *DEAD*" : "");
-                renderText(DG_ScreenBuffer, s, 2, 12 + FONT_SIZE_Y, 0);
+                renderText(DG_ScreenBuffer, s, 2, 12 + FONT_SIZE_Y, hurt ? 2 : 0);
 
                 snprintf(s, sizeof(s), "K %d/%d I %d/%d S %d/%d", plyr->killcount,
                          totalkills, plyr->itemcount, totalitems,

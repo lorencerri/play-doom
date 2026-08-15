@@ -2,6 +2,7 @@ import { validateNamespace } from '../domain/keys.ts';
 import { bestRun, getStatus, recentRuns, type PastRun } from '../domain/status.ts';
 import { boolParam, intParam } from '../http/query.ts';
 import { png } from '../http/serve.ts';
+import { renderStatusCard } from '../render/status-card.ts';
 import { renderTextImage } from '../render/text-image.ts';
 import { formatTics, levelName } from '../render/summary.ts';
 
@@ -64,5 +65,14 @@ export async function statusRoute(req: Request, params: Record<string, string>):
 		return Response.json({ namespace, status: getStatus(namespace) ?? null, best: best ?? null, runs });
 	}
 
-	return png(await renderTextImage(statusText(namespace, runs, best)), `status_${namespace}.png`);
+	// `?text=true` keeps the plain rendering available; the card is the default because
+	// it is what the README embeds.
+	if (boolParam(url, 'text', false)) {
+		return png(await renderTextImage(statusText(namespace, runs, best)), `status_${namespace}.png`);
+	}
+
+	return png(
+		await renderStatusCard({ namespace, status: getStatus(namespace), best, runs }),
+		`status_${namespace}.png`,
+	);
 }
