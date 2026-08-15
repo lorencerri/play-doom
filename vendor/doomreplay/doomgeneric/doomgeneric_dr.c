@@ -338,8 +338,12 @@ void DG_DrawFrame() {
                 const int secs = leveltime / TICRATE;
                 char s[64];
 
-                snprintf(s, sizeof(s), "E%dM%d %d:%02d", gameepisode, gamemap,
-                         secs / 60, secs % 60);
+                // A dead player is the one state the status bar cannot show — it keeps
+                // reporting 0% health with no indication the run is over, and the view
+                // just tilts to the floor. Say so.
+                snprintf(s, sizeof(s), "E%dM%d %d:%02d%s", gameepisode, gamemap,
+                         secs / 60, secs % 60,
+                         plyr->playerstate == PST_DEAD ? " *DEAD*" : "");
                 renderText(DG_ScreenBuffer, s, 2, 12 + FONT_SIZE_Y, 0);
 
                 snprintf(s, sizeof(s), "K %d/%d I %d/%d S %d/%d", plyr->killcount,

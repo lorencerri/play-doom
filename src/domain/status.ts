@@ -30,7 +30,18 @@ const upsertStatus = db.query<
 const num = (value: number | undefined): number | null => value ?? null;
 const bool = (value: boolean | undefined): number | null => (value === undefined ? null : value ? 1 : 0);
 
-export function setStatus(namespace: string, summary: RunSummary): void {
+/**
+ * Records the new status and reports whether the player just died.
+ *
+ * The alive→dead *transition* is what counts, not the dead state: a render happens on
+ * every input change, and a png and a gif of the same buffer both report the same
+ * death, so counting the state would inflate the total. Comparing against the stored
+ * status makes it idempotent — and a rewind back past the death correctly re-arms it.
+ */
+export function setStatus(namespace: string, summary: RunSummary): boolean {
+	const previous = getStatus(namespace);
+	const died = summary.dead === true && previous?.dead !== true;
+
 	upsertStatus.run(
 		namespace,
 		summary.state,
@@ -48,6 +59,8 @@ export function setStatus(namespace: string, summary: RunSummary): void {
 		num(summary.frames),
 		Date.now(),
 	);
+
+	return died;
 }
 
 export type NamespaceStatus = RunSummary & { namespace: string; updatedAt: number };
@@ -165,9 +178,12 @@ function toRun(row: RunRow): PastRun {
 	};
 }
 
+// `id DESC` is the tiebreaker, not decoration: `ended_at` is a millisecond timestamp,
+// and two runs archived inside the same millisecond would otherwise come back in
+// whatever order SQLite felt like.
 const selectRecent = db.query<RunRow, [string, number]>(`
 	SELECT episode, map, kills, total_kills, secrets, tics, dead, frames, ended_at
-	FROM run_history WHERE namespace = ? ORDER BY ended_at DESC LIMIT ?
+	FROM run_history WHERE namespace = ? ORDER BY ended_at DESC, id DESC LIMIT ?
 `);
 
 export function recentRuns(namespace: string, limit = 10): PastRun[] {

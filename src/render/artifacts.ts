@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { rename, rm } from 'node:fs/promises';
 import { config } from '../config.ts';
-import { getInput, getInputString } from '../domain/input.ts';
-import type { Filetype } from '../domain/keys.ts';
+import { clearInput, getInput, getInputString, getStoredBatches } from '../domain/input.ts';
+import { tokenize, type Filetype } from '../domain/keys.ts';
+import { recordNamespaceStats } from '../domain/meta.ts';
 import { addSegment, clearSegments, listSegments, nextSeq } from '../domain/segments.ts';
 import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
 import { recordRun, setStatus } from '../domain/status.ts';
@@ -65,12 +66,33 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 
 		// The replay just ran to the end of the buffer, so its final state is this
 		// namespace's current state — recording it here costs nothing extra.
-		if (summary) setStatus(namespace, summary);
+		if (summary && setStatus(namespace, summary)) onDeath(namespace);
 
 		setRenderHash(namespace, artifact, hash);
 	});
 
 	return outputPath;
+}
+
+/**
+ * Called once per death, on the alive→dead transition rather than per dead frame.
+ *
+ * Ending the run automatically is opt-in. It changes how the game behaves for everyone
+ * clicking the README — a run that would have been continued past the death screen now
+ * ends — and that is the profile owner's call. Counting the death is not: it happened
+ * either way.
+ */
+function onDeath(namespace: string): void {
+	recordNamespaceStats(namespace, { deaths: 1 });
+	logger.info({ namespace }, 'player died');
+
+	if (!config.AUTO_ARCHIVE_ON_DEATH) return;
+
+	// Deferred rather than awaited: this runs inside the namespace's render queue, and
+	// archiving takes the same queue — awaiting it here would deadlock.
+	queueMicrotask(() => {
+		endRun(namespace).catch((err) => logger.error({ namespace, err }, 'auto-archive on death failed'));
+	});
 }
 
 /**
@@ -178,6 +200,41 @@ export async function ensureCombinedVideo(namespace: string): Promise<string> {
 	});
 
 	return path;
+}
+
+/**
+ * Ends the current run: clears the buffer, starts the next one, and archives what was
+ * played. Returns whether there was anything to archive.
+ *
+ * Shared by the reset control and by `AUTO_ARCHIVE_ON_DEATH`, so a run ends the same
+ * way however it ended. The buffer is captured before it is cleared, so a click landing
+ * mid-archive starts the next run without corrupting this one.
+ */
+export async function endRun(namespace: string): Promise<boolean> {
+	const stored = getStoredBatches(namespace);
+	const finishedRun = getInputString(namespace);
+	const hadPlay = stored.some((batch) => tokenize(batch).length > 0);
+
+	clearInput(namespace);
+	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
+	recordNamespaceStats(namespace, { runs: hadPlay ? 1 : 0 });
+
+	// Queued before the archive on purpose. Both are detached, but they share the
+	// per-namespace queue, and archiving re-renders an entire run — putting the cheap
+	// opening frame behind it would leave the README stale for as long as that takes.
+	warmFrames(namespace);
+
+	if (hadPlay) {
+		// Deliberately not awaited: archiving re-renders the whole run and the click
+		// should return immediately. The job owns its errors, because an unhandled
+		// rejection from detached work after the response was sent is what took the
+		// old process down (crash cause #2).
+		archiveRun(namespace, finishedRun).catch((err) => {
+			logger.error({ namespace, err }, 'run archiving failed');
+		});
+	}
+
+	return hadPlay;
 }
 
 /**

@@ -51,6 +51,15 @@ export const schema = z.object({
 		)
 		.pipe(z.array(z.enum(FILETYPES))),
 
+	// End the run automatically when the player dies, archiving it and starting fresh.
+	// Off by default: it changes how the game behaves for everyone clicking the README,
+	// which is a decision for whoever owns the profile, not a default worth assuming.
+	// Deaths are detected and counted either way.
+	AUTO_ARCHIVE_ON_DEATH: z
+		.enum(['true', 'false'])
+		.default('false')
+		.transform((value) => value === 'true'),
+
 	// Whether to believe the client-address headers the proxy sets. True is correct
 	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
 	// Set false if the app is ever exposed directly, where those headers would be

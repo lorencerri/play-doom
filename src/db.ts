@@ -165,4 +165,27 @@ db.exec(`
 	);
 `);
 
+/**
+ * Adds a column to an existing table if it is missing.
+ *
+ * `CREATE TABLE IF NOT EXISTS` silently does nothing when the table already exists, so
+ * on any database that has already been deployed a new column in one of the
+ * definitions above would never appear — and the first query naming it would throw at
+ * runtime rather than at startup. This keeps schema changes additive and idempotent.
+ *
+ * `table` and `definition` are compile-time literals from this file, never request
+ * data; SQLite cannot parameterise DDL.
+ */
+function ensureColumn(table: string, column: string, definition: string): void {
+	const columns = db.query<{ name: string }, []>(`PRAGMA table_info(${table})`).all();
+	if (columns.some((existing) => existing.name === column)) return;
+
+	db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+	logger.info({ table, column }, 'schema column added');
+}
+
+// Added after namespace_stats shipped, so it has to go on by ALTER for anyone who
+// already has the table.
+ensureColumn('namespace_stats', 'deaths', 'deaths INTEGER NOT NULL DEFAULT 0');
+
 logger.info({ path: `${config.DATA_DIR}/play-doom.sqlite` }, 'database ready');

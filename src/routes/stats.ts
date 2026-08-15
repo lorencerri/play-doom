@@ -14,6 +14,7 @@ const COLUMNS: { header: string; width: number; of: (row: NamespaceStats) => str
 	{ header: 'Keys', width: 9, of: (row) => String(row.keysPressed) },
 	{ header: 'Rewinds', width: 9, of: (row) => String(row.rewinds) },
 	{ header: 'Runs', width: 6, of: (row) => String(row.runs) },
+	{ header: 'Deaths', width: 8, of: (row) => String(row.deaths) },
 	// Where the namespace actually is right now, straight from the engine's own
 	// end-of-replay report rather than anything the API infers.
 	{

@@ -66,16 +66,18 @@ export type NamespaceDelta = {
 	keysPressed?: number;
 	rewinds?: number;
 	runs?: number;
+	deaths?: number;
 };
 
-const upsertNamespaceStats = db.query<never, [string, number, number, number, number, number, number]>(`
-	INSERT INTO namespace_stats (namespace, actions, keys_pressed, rewinds, runs, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?)
+const upsertNamespaceStats = db.query<never, [string, number, number, number, number, number, number, number]>(`
+	INSERT INTO namespace_stats (namespace, actions, keys_pressed, rewinds, runs, deaths, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT (namespace) DO UPDATE SET
 		actions      = actions + excluded.actions,
 		keys_pressed = keys_pressed + excluded.keys_pressed,
 		rewinds      = rewinds + excluded.rewinds,
 		runs         = runs + excluded.runs,
+		deaths       = deaths + excluded.deaths,
 		updated_at   = ?
 `);
 
@@ -87,6 +89,7 @@ export function recordNamespaceStats(namespace: string, delta: NamespaceDelta): 
 		delta.keysPressed ?? 0,
 		delta.rewinds ?? 0,
 		delta.runs ?? 0,
+		delta.deaths ?? 0,
 		now,
 		now,
 	);
@@ -98,6 +101,7 @@ export type NamespaceStats = {
 	keysPressed: number;
 	rewinds: number;
 	runs: number;
+	deaths: number;
 };
 
 export type MetaStats = {
@@ -111,9 +115,9 @@ const countPlayers = db.query<{ n: number }, []>('SELECT COUNT(*) AS n FROM play
 const countVariants = db.query<{ n: number }, []>('SELECT COUNT(*) AS n FROM input_variants');
 
 const selectNamespaces = db.query<
-	{ namespace: string; actions: number; keys_pressed: number; rewinds: number; runs: number },
+	{ namespace: string; actions: number; keys_pressed: number; rewinds: number; runs: number; deaths: number },
 	[]
->('SELECT namespace, actions, keys_pressed, rewinds, runs FROM namespace_stats ORDER BY actions DESC');
+>('SELECT namespace, actions, keys_pressed, rewinds, runs, deaths FROM namespace_stats ORDER BY actions DESC');
 
 const selectTopVariants = db.query<{ keys: string; uses: number }, [number]>(
 	'SELECT keys, uses FROM input_variants ORDER BY uses DESC LIMIT ?',
@@ -129,6 +133,7 @@ export function getMetaStats(topInputs = 5): MetaStats {
 			keysPressed: row.keys_pressed,
 			rewinds: row.rewinds,
 			runs: row.runs,
+			deaths: row.deaths,
 		})),
 		topInputs: selectTopVariants.all(topInputs),
 	};

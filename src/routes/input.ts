@@ -1,12 +1,12 @@
-import { appendBatch, clearInput, getInput, getInputString, getStoredBatches, rewindKeys } from '../domain/input.ts';
-import { normalizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
+import { appendBatch, getInput, rewindKeys } from '../domain/input.ts';
+import { normalizeInput, validateKeys, validateNamespace } from '../domain/keys.ts';
 import { recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
 import { incrementStats, setFlags } from '../domain/state.ts';
 import { clientAddressOf } from '../http/client.ts';
 import { boolParam, intParam, stringParam } from '../http/query.ts';
 import { png, redirectTo, text } from '../http/serve.ts';
 import { logger } from '../logger.ts';
-import { archiveRun, warmFrames } from '../render/artifacts.ts';
+import { endRun, warmFrames } from '../render/artifacts.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 const MAX_REWIND = 1024;
@@ -71,34 +71,10 @@ export async function resetRoute(req: Request, params: Record<string, string>): 
 	const namespace = validateNamespace(params.namespace ?? '');
 	const url = new URL(req.url);
 
-	// Capture before clearing: the archive renders this exact buffer while the next
-	// run is already free to start.
-	const stored = getStoredBatches(namespace);
-	const finishedRun = getInputString(namespace);
-	const hadPlay = stored.some((batch) => tokenize(batch).length > 0);
-
-	clearInput(namespace);
-	// A reset only counts as a completed run if something was actually played —
-	// resetting an already-empty buffer is a no-op, not a run.
-	recordNamespaceStats(namespace, { runs: hadPlay ? 1 : 0 });
+	// The clear/archive half is shared with AUTO_ARCHIVE_ON_DEATH, so a run ends the
+	// same way whether a player clicked reset or the engine reported a death.
+	const hadPlay = await endRun(namespace);
 	recordPlayerAction(clientAddressOf(req));
-	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
-
-	// Queued before the archive on purpose. Both are detached, but they share the
-	// per-namespace queue, and archiving re-renders an entire run — putting the
-	// cheap opening frame behind it would leave the README stale for as long as
-	// that takes.
-	warmFrames(namespace);
-
-	if (hadPlay) {
-		// Deliberately not awaited — archiving re-renders the whole run and the click
-		// should return immediately. The original did the same but let failures throw
-		// after the response had been sent, which on Node 16 took the process down
-		// (crash cause #2). Here the job owns its errors and only ever reaches the log.
-		archiveRun(namespace, finishedRun).catch((err) => {
-			logger.error({ namespace, err }, 'run archiving failed');
-		});
-	}
 
 	logger.info({ namespace, archived: hadPlay }, 'input reset');
 
