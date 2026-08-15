@@ -48,21 +48,37 @@ export function shellArg(value: string): string {
  * capped at 16 frames (routes/frame.ts), about 16MB of raw BGRA.
  */
 /**
- * A two-tone surround: a one-pixel light edge, then the outer band.
+ * Escapes a path for use inside a filtergraph.
  *
- * Drawn here rather than in the C so it costs no rebuild to change, and so the videos
- * — which are downloads, not page furniture — stay untouched. The inner line is what
- * separates it from the dark scenery Doom mostly renders; without it an 8px black
- * border around a dark frame is invisible.
+ * Filter arguments are split on `:` and `,`, so a path containing either would be read
+ * as more options. The bezel path is built from DATA_DIR, which is configuration rather
+ * than user input, but a mangled filtergraph fails in ways that are tedious to diagnose.
  */
-export function borderFilter(border: number): string[] {
-	if (border <= 0) return [];
-
-	const inner = 'pad=iw+2:ih+2:1:1:color=0x3A3C41';
-	return [inner, `pad=iw+${border * 2}:ih+${border * 2}:${border}:${border}:color=0x151517`];
+export function filterPath(path: string): string {
+	return path.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/,/g, '\\,').replace(/'/g, "\\'");
 }
 
-export function gifFilterComplex(gifWidth: number, border = 0): string {
+/**
+ * Composites the bezel over the picture and pads out to make room for it.
+ *
+ * The first version of this used `pad` alone, which can only draw flat bands — the
+ * result read as a border rather than a screen. The bezel is a generated PNG with
+ * rounded corners, a gradient and an inner shadow (see bezel.ts), so it has to be
+ * overlaid rather than drawn.
+ *
+ * Padding happens first with a transparent-safe colour, then the bezel lands on top at
+ * the origin; the bezel's own cutout is what lets the picture through.
+ */
+export function borderFilter(border: number, bezelPath?: string): { chain: string[]; sources: string[] } {
+	if (border <= 0 || !bezelPath) return { chain: [], sources: [] };
+
+	return {
+		chain: [`pad=iw+${border * 2}:ih+${border * 2}:${border}:${border}:color=0x000000`],
+		sources: [`movie=${filterPath(bezelPath)}[bezel]`],
+	};
+}
+
+export function gifFilterComplex(gifWidth: number, border = 0, bezelPath?: string): string {
 	// Mandatory, and not obvious: doomgeneric hands ffmpeg BGRA frames whose alpha
 	// byte it never writes, so alpha is 0 everywhere. The old `-pix_fmt bgr8` dropped
 	// the channel on the way out and the garbage alpha never mattered. A filtergraph
@@ -77,14 +93,19 @@ export function gifFilterComplex(gifWidth: number, border = 0): string {
 	// eyeballed against the README. Plan 1.3.
 	if (gifWidth > 0) chain.push(`scale=${gifWidth}:-1:flags=lanczos`);
 
-	// After any downscale, so the border is a constant thickness on the served image
-	// rather than being scaled with the frame.
-	chain.push(...borderFilter(border));
+	// After any downscale, so the bezel is a constant thickness on the served image
+	// rather than being scaled with the picture.
+	const { chain: borderChain, sources } = borderFilter(border, bezelPath);
+	chain.push(...borderChain);
 
-	chain.push('split[a][b]');
+	// The palette is generated *after* the bezel is composited, so its greys are in the
+	// table. Generating it from the bare picture and then overlaying would dither the
+	// bezel against colours chosen without it.
+	const picture = sources.length > 0 ? `${chain.join(',')}[picture];[picture][bezel]overlay=0:0,split[a][b]` : `${chain.join(',')},split[a][b]`;
 
 	return [
-		chain.join(','),
+		...sources,
+		picture,
 		'[a]palettegen=stats_mode=diff[p]',
 		'[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
 	].join(';');
@@ -96,6 +117,8 @@ export type EncoderOptions = {
 	mp4Preset: string;
 	mp4Crf: number;
 	frameBorder: number;
+	/** Path to the generated bezel; omitted when the surround is off. */
+	bezelPath?: string;
 };
 
 /**
@@ -121,23 +144,28 @@ export function buildEncoderEnv(opts: EncoderOptions): Record<string, string> {
 
 		// `-loop -1` is preserved deliberately: in ffmpeg's gif muxer that disables
 		// looping, which is what the freeze frames doomgeneric appends are for.
-		DR_FFMPEG_ARGS_GIF: `-filter_complex ${shellArg(gifFilterComplex(opts.gifWidth, opts.frameBorder))} -loop -1`,
+		DR_FFMPEG_ARGS_GIF: `-filter_complex ${shellArg(gifFilterComplex(opts.gifWidth, opts.frameBorder, opts.bezelPath))} -loop -1`,
 
-		DR_FFMPEG_ARGS_PNG: pngArgs(opts.frameBorder),
+		DR_FFMPEG_ARGS_PNG: pngArgs(opts.frameBorder, opts.bezelPath),
 	};
 }
 
-function pngArgs(border: number): string {
-	const filters = borderFilter(border);
-	return filters.length === 0 ? '-pix_fmt rgb24' : `-vf ${shellArg(filters.join(','))} -pix_fmt rgb24`;
+function pngArgs(border: number, bezelPath?: string): string {
+	const { chain, sources } = borderFilter(border, bezelPath);
+	if (sources.length === 0) return '-pix_fmt rgb24';
+
+	// `movie=` needs a second input, so this is filter_complex rather than -vf.
+	const graph = [...sources, `[0:v]${chain.join(',')}[picture]`, '[picture][bezel]overlay=0:0'].join(';');
+	return `-filter_complex ${shellArg(graph)} -pix_fmt rgb24`;
 }
 
-export function encoderEnv(): Record<string, string> {
+export function encoderEnv(bezelPath?: string): Record<string, string> {
 	return buildEncoderEnv({
 		ffmpegBin: config.FFMPEG_BIN,
 		gifWidth: config.GIF_WIDTH,
 		mp4Preset: config.MP4_PRESET,
 		mp4Crf: config.MP4_CRF,
 		frameBorder: config.FRAME_BORDER,
+		bezelPath,
 	});
 }

@@ -1,4 +1,5 @@
 import { config } from '../config.ts';
+import { ensureBezel } from './bezel.ts';
 import { encoderEnv } from './encoding.ts';
 import { run } from './exec.ts';
 import { parseRunSummary, type RunSummary } from './summary.ts';
@@ -46,11 +47,14 @@ function doomArgs(opts: { nrecord: number; nthframe: number; framerate: number; 
  * fail a render that otherwise produced a good frame.
  */
 export async function renderFrame(opts: FrameOptions): Promise<RunSummary | undefined> {
+	// Generated once and cached on disk; ffmpeg reads it as a second input.
+	const bezelPath = await ensureBezel(config.GIF_WIDTH, config.FRAME_BORDER);
+
 	const stdout = await run(
 		config.DOOMGENERIC_BIN,
 		doomArgs({ ...opts, framerate: FRAME_FRAMERATE }),
 		`doomgeneric frame → ${opts.outputPath}`,
-		encoderEnv(),
+		encoderEnv(bezelPath),
 	);
 
 	return parseRunSummary(stdout);

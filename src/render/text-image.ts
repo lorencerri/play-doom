@@ -42,11 +42,16 @@ function wrap(text: string): string[] {
 	return lines.length > 0 ? lines : [''];
 }
 
-export async function renderTextImage(text: string): Promise<Buffer> {
+/**
+ * @param fixedWidth forces the output width instead of sizing to the text. The README
+ *   stacks this under images of a known width, and a strip that changes width with its
+ *   contents is what made that stack look like unrelated pieces.
+ */
+export async function renderTextImage(text: string, fixedWidth?: number): Promise<Buffer> {
 	const lines = wrap(text);
 	const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
 
-	const width = Math.max(1, Math.ceil(MARGIN * 2 + longest * CHAR_WIDTH));
+	const width = fixedWidth ?? Math.max(1, Math.ceil(MARGIN * 2 + longest * CHAR_WIDTH));
 	const height = MARGIN * 2 + LINE_HEIGHT * lines.length;
 
 	const spans = lines

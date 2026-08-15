@@ -1,4 +1,5 @@
 import type { PastRun } from '../domain/status.ts';
+import { panelWidth } from './bezel.ts';
 import { bar, PAD, PALETTE, ROW, text, toPng } from './card.ts';
 import { formatTics, levelName, type RunSummary } from './summary.ts';
 
@@ -12,7 +13,8 @@ import { formatTics, levelName, type RunSummary } from './summary.ts';
  * a README is for.
  */
 
-const WIDTH = 460;
+// Matches the framed screen above it, so the two share an edge on the README.
+const WIDTH = panelWidth();
 
 /** Health colour tracks the number, so a dying run is obvious without reading it. */
 function healthColour(health: number | undefined): string {

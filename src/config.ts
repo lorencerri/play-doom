@@ -108,7 +108,7 @@ export const schema = z.object({
 	// reads as a screen rather than an image floating in the page, which matters on a
 	// README where the frame sits directly against body text. Applies to the gif and
 	// png only — the videos are downloads and are left clean.
-	FRAME_BORDER: z.coerce.number().int().min(0).max(64).default(8),
+	FRAME_BORDER: z.coerce.number().int().min(0).max(64).default(12),
 
 	// Downscale width for the gif, or 0 to keep doomgeneric's native 640x400. 320
 	// gives Doom's true resolution and roughly a quarter of the pixels, at the cost

@@ -1,5 +1,6 @@
 import type { MetaStats, NamespaceStats } from '../domain/meta.ts';
 import type { Stats } from '../domain/state.ts';
+import { panelWidth } from './bezel.ts';
 import { bar, PAD, PALETTE, ROW, text, toPng } from './card.ts';
 
 /**
@@ -12,7 +13,8 @@ import { bar, PAD, PALETTE, ROW, text, toPng } from './card.ts';
  * into something that says where each game currently is.
  */
 
-const WIDTH = 520;
+// Matches the framed screen and the run card, so all three share an edge.
+const WIDTH = panelWidth();
 
 /** Thousands separators: these run to six figures and are unreadable without them. */
 const n = (value: number): string => value.toLocaleString('en-US');

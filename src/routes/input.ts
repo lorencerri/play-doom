@@ -10,6 +10,7 @@ import { RateLimiter } from '../http/rate-limit.ts';
 import { png, redirectTo, text } from '../http/serve.ts';
 import { logger } from '../logger.ts';
 import { endRun, warmFrames } from '../render/artifacts.ts';
+import { panelWidth } from '../render/bezel.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 const MAX_REWIND = 1024;
@@ -68,7 +69,8 @@ export async function getInputRoute(req: Request, params: Record<string, string>
 	// problem. `?groups=` overrides for anyone who wants the lot.
 	const groups = intParam(url, 'groups', DEFAULT_HISTORY_GROUPS, 1, 1000);
 
-	return png(await renderTextImage(summarizeInput(input, groups)), `input_${namespace}.png`);
+	// Drawn at the same width as the frame and the run card so the three line up.
+	return png(await renderTextImage(summarizeInput(input, groups), panelWidth()), `input_${namespace}.png`);
 }
 
 export async function appendRoute(req: Request, params: Record<string, string>): Promise<Response> {
