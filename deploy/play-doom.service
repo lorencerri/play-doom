@@ -8,8 +8,10 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 
-# Placeholder — set to wherever this repo actually lives on the VPS.
-WorkingDirectory=/opt/play-doom
+# Where the repo lives on the VPS today. The old service ran from here as a bare
+# `node` process with no supervisor at all, which is why a crash meant the app
+# stayed down until someone noticed.
+WorkingDirectory=/root/git/play-doom
 
 ExecStart=/usr/bin/docker compose -f docker/compose.yaml up -d --build
 ExecStop=/usr/bin/docker compose -f docker/compose.yaml down
