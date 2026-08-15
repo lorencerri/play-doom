@@ -60,6 +60,21 @@ db.exec(`
 `);
 db.exec(`INSERT OR IGNORE INTO stats (id) VALUES (1);`);
 
+// One row per finished run that has not yet been folded into `full_<ns>.mp4`.
+//
+// Archiving used to concatenate the entire archive on every reset, which is O(all
+// history) for O(one run) of new footage — measured at 11.4s and 623MB rewritten for
+// `github`, growing with every reset. Runs now land here as their own segment file
+// and are folded in only when someone actually asks for the full video.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS run_segments (
+		namespace  TEXT    NOT NULL,
+		seq        INTEGER NOT NULL,
+		created_at INTEGER NOT NULL,
+		PRIMARY KEY (namespace, seq)
+	);
+`);
+
 // Small key/value side table. Currently holds only the player-id salt, which has to
 // outlive restarts — see http/client.ts for why it is generated rather than fixed.
 db.exec(`

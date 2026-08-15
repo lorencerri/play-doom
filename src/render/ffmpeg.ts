@@ -22,5 +22,7 @@ export async function concat(namespace: string, inputs: string[], outputPath: st
 		config.FFMPEG_BIN,
 		['-f', 'concat', '-safe', '0', '-i', listPath, '-y', '-c', 'copy', outputPath],
 		`ffmpeg concat → ${outputPath}`,
+		undefined,
+		config.CONCAT_TIMEOUT_MS,
 	);
 }

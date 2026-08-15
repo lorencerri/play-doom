@@ -3,6 +3,7 @@ import { rename, rm } from 'node:fs/promises';
 import { config } from '../config.ts';
 import { getInput, getInputString } from '../domain/input.ts';
 import type { Filetype } from '../domain/keys.ts';
+import { addSegment, clearSegments, listSegments, nextSeq } from '../domain/segments.ts';
 import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
 import { logger } from '../logger.ts';
 import { fileExists } from '../http/serve.ts';
@@ -16,6 +17,7 @@ export const paths = {
 	full: (namespace: string) => `${config.DATA_DIR}/full_${namespace}.mp4`,
 	combined: (namespace: string) => `${config.DATA_DIR}/combined_${namespace}.mp4`,
 	run: (namespace: string) => `${config.DATA_DIR}/run_${namespace}.mp4`,
+	segment: (namespace: string, seq: number) => `${config.DATA_DIR}/seg_${namespace}_${seq}.mp4`,
 	tmp: (namespace: string, name: string) => `${config.DATA_DIR}/tmp_${name}_${namespace}.mp4`,
 };
 
@@ -113,6 +115,50 @@ export async function ensureCurrentVideo(namespace: string): Promise<string> {
 	return path;
 }
 
+/**
+ * Folds any pending run segments into `full_<ns>.mp4` and returns it, or undefined
+ * when the namespace has nothing archived at all.
+ *
+ * This is where the cost of archiving now lives. `archiveRun` writes one segment and
+ * stops; the expensive whole-archive concat happens here, on the rare request for the
+ * full video, instead of on every reset. An existing `full_<ns>.mp4` is folded in as
+ * the first input, so archives written by the previous scheme carry over untouched.
+ */
+export async function ensureFullVideo(namespace: string): Promise<string | undefined> {
+	const fullPath = paths.full(namespace);
+
+	const settled = async () => (listSegments(namespace).length === 0 ? await fileExists(fullPath) : false);
+	if (await settled()) return fullPath;
+
+	await enqueue(namespace, 'video:fold', async () => {
+		// Re-read inside the queue: an archive that was queued behind this request
+		// may have added a segment, and concurrent readers should not fold twice.
+		const segments = listSegments(namespace);
+		if (segments.length === 0) return;
+
+		const segmentPaths = segments.map((seq) => paths.segment(namespace, seq));
+		const hasArchive = await fileExists(fullPath);
+
+		if (!hasArchive && segmentPaths.length === 1) {
+			// First run for this namespace: the segment already is the whole archive.
+			await rename(segmentPaths[0]!, fullPath);
+		} else {
+			// Never concat straight onto fullPath — it is one of the inputs, and a
+			// failure partway through would leave the archive truncated.
+			const merged = paths.tmp(namespace, 'full');
+			await concat(namespace, hasArchive ? [fullPath, ...segmentPaths] : segmentPaths, merged);
+			await rename(merged, fullPath);
+			await Promise.all(segmentPaths.map((path) => rm(path, { force: true })));
+		}
+
+		clearSegments(namespace, segments);
+		setFlags(namespace, { full_video_outdated: false });
+		logger.info({ namespace, segments: segments.length }, 'archive folded');
+	});
+
+	return (await fileExists(fullPath)) ? fullPath : undefined;
+}
+
 /** Rebuilds `combined_<ns>.mp4` from the archive plus the run in progress. */
 export async function ensureCombinedVideo(namespace: string): Promise<string> {
 	const path = paths.combined(namespace);
@@ -130,31 +176,32 @@ export async function ensureCombinedVideo(namespace: string): Promise<string> {
 }
 
 /**
- * Renders the finished run and appends it to the namespace's archive.
+ * Renders the finished run and parks it as a segment for later folding.
  *
  * `input` is captured by the caller before the buffer is cleared, so a click that
- * lands during the render starts the next run without corrupting this one. The
- * render goes to its own `run_<ns>.mp4` rather than reusing `current_<ns>.mp4`,
- * which the original renamed out from under whatever the new run had started
- * writing there.
+ * lands during the render starts the next run without corrupting this one. Each run
+ * gets its own segment file rather than reusing `current_<ns>.mp4`, which the
+ * original renamed out from under whatever the new run had started writing there.
+ *
+ * This deliberately does *not* merge into the archive. Merging is O(everything ever
+ * recorded) for O(one run) of new footage: on the live `github` namespace that meant
+ * rewriting 623MB and 11.4s of disk on every reset, against a 30s subprocess timeout
+ * that the archive would eventually outgrow. `ensureFullVideo` does the merge when
+ * the full video is actually asked for.
  */
 export async function archiveRun(namespace: string, input: string): Promise<void> {
 	await enqueue(namespace, 'video:archive', async () => {
-		const runPath = paths.run(namespace);
-		const fullPath = paths.full(namespace);
+		const seq = nextSeq(namespace);
+		const segmentPath = paths.segment(namespace, seq);
 
-		await renderVideo(input, runPath);
+		await renderVideo(input, segmentPath);
 
-		if (await fileExists(fullPath)) {
-			const merged = paths.tmp(namespace, 'full');
-			await concat(namespace, [fullPath, runPath], merged);
-			await rename(merged, fullPath);
-			await rm(runPath, { force: true });
-		} else {
-			await rename(runPath, fullPath);
-		}
+		// Recorded only after a successful render, so a failed one leaves no row
+		// pointing at a partial file — the orphan is overwritten by the next attempt,
+		// which reuses this sequence number.
+		addSegment(namespace, seq);
 
-		setFlags(namespace, { full_video_outdated: false, combined_outdated: true });
-		logger.info({ namespace }, 'run archived');
+		setFlags(namespace, { full_video_outdated: true, combined_outdated: true });
+		logger.info({ namespace, seq }, 'run archived as segment');
 	});
 }

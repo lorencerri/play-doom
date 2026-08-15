@@ -18,6 +18,12 @@ export const schema = z.object({
 	RENDER_CONCURRENCY: z.coerce.number().int().positive().default(2),
 	RENDER_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
+	// Concat is stream-copy, so it is bound by disk rather than CPU and scales with
+	// the size of the archive, not with how long the run was. Folding the live 623MB
+	// `full_github.mp4` measured 11.4s cold on the VPS and grows with every reset, so
+	// it needs far more headroom than a render — 30s would eventually kill it midway.
+	CONCAT_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
+
 	// Start rendering the frame when the key is appended rather than when the image
 	// is requested, so GitHub's image proxy hits a file that already exists (§1.2).
 	// Turn off to put rendering back on the request path.

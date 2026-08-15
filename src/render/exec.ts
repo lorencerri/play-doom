@@ -26,7 +26,13 @@ export class SubprocessError extends Error {
  * interpolated the namespace and the raw key buffer into a string handed to
  * `exec`, i.e. to `/bin/sh`.
  */
-export async function run(bin: string, args: string[], label: string, env?: Record<string, string>): Promise<void> {
+export async function run(
+	bin: string,
+	args: string[],
+	label: string,
+	env?: Record<string, string>,
+	timeoutMs: number = config.RENDER_TIMEOUT_MS,
+): Promise<void> {
 	const start = performance.now();
 	let timedOut = false;
 
@@ -52,7 +58,7 @@ export async function run(bin: string, args: string[], label: string, env?: Reco
 	const timer = setTimeout(() => {
 		timedOut = true;
 		proc.kill('SIGKILL');
-	}, config.RENDER_TIMEOUT_MS);
+	}, timeoutMs);
 
 	// stdout is drained, not just piped. Two reasons, both learned the hard way:
 	// a pipe nobody reads fills at 64KB and blocks the writer forever (which the
@@ -77,7 +83,7 @@ export async function run(bin: string, args: string[], label: string, env?: Reco
 
 	if (timedOut) {
 		logger.error({ label, bin, ms, stderr: tail, stdout: outTail }, 'subprocess timed out');
-		throw new SubprocessError(`${label} timed out after ${config.RENDER_TIMEOUT_MS}ms`, bin, null, tail);
+		throw new SubprocessError(`${label} timed out after ${timeoutMs}ms`, bin, null, tail);
 	}
 
 	if (proc.exitCode !== 0) {
