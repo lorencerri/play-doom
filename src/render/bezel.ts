@@ -43,9 +43,14 @@ function bezelSvg(inner: { width: number; height: number }, border: number): str
 	const outerR = Math.max(4, Math.round(border * 0.9));
 	const screenR = Math.max(2, Math.round(border * 0.4));
 
-	// The shadow reaches this far onto the picture. Kept proportional so it stays a
-	// suggestion of depth rather than eating the frame at large border sizes.
-	const shadow = Math.max(3, Math.round(border * 0.7));
+	// How far the shadow reaches onto the picture.
+	//
+	// Deliberately small, and this is a size decision as much as a visual one: the
+	// shadow is the only part of the bezel that falls *across* the picture, so every
+	// pixel under it becomes a new colour competing for the gif's 256-entry palette.
+	// Measured at 0.7x the border it cost +126KB on a 442KB gif (+29%). Keeping it
+	// tight preserves the recessed look for a fraction of that.
+	const shadow = Math.max(2, Math.round(border * 0.3));
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
 <defs>
