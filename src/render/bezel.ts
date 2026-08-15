@@ -97,7 +97,15 @@ export async function ensureBezel(gifWidth: number, border: number): Promise<str
 	if (await fileExists(path)) return path;
 
 	await mkdir(config.DATA_DIR, { recursive: true });
-	await sharp(Buffer.from(bezelSvg(inner, border))).png().toFile(path);
+
+	// Quantised hard, and this is the whole reason the bezel is affordable. A gif has
+	// 256 palette entries total; a smoothly graded bezel spends ~100 of them on plastic
+	// and leaves the *picture* dithering against what is left. Measured: the smooth
+	// version cost +126KB on a 442KB gif. Sixteen greys still read as a gradient at this
+	// size and leave the palette to the game.
+	await sharp(Buffer.from(bezelSvg(inner, border)))
+		.png({ palette: true, colours: 16, dither: 0 })
+		.toFile(path);
 
 	return path;
 }
