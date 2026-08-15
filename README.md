@@ -1,33 +1,80 @@
 **Play Doom!**
 
-![](https://doom-api-v2.plexidev.org/frame/play-doom/?type=.gif)<br /><img src="https://doom-api-v2.plexidev.org/input/play-doom?image=true" />
+<img src="https://doom-api-v2.plexidev.org/frame/play-doom/?type=.gif" alt="the current frame" />
 
-### Controls (<a href="https://doom-api-v2.plexidev.org/input/play-doom/rewind/?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">rewind</a>)
+### Controls
 
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Idle Frame</a> [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">10x</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">25x</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">50x</a>]
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=x,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Escape</a> (Open/Close Menu)
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=e,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Enter</a>
-- Arrow [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Left</a> (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">5x</a>) (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">25x</a>)] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Right</a> (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">5x</a>) (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">25x</a>)] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Up</a> (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">5x</a>) (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">25x</a>)] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Down</a> (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">5x</a>) (<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">25x</a>)]
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=a,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Alt</a>
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=s,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Shift</a>
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=p,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Space</a> (Use)
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">CTRL</a> (Shoot) [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Spam Button</a>]
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=t,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Tab</a> (Map)
-- Shift + [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=U,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Up Arrow</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=D,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Down Arrow</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=L,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Left Arrow</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=R,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Right Arrow</a>]
-- Strafe [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=j,j,j,j,j,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Left</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=k,k,k,k,k,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Right</a>]
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=y,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Yes</a>
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=n,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">No</a>
-- Item Slot [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=2,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">2</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=3,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">3</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=4,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">4</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=5,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">5</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=6,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">6</a>] [<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=7,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">7</a>]
+<table>
+<tr>
+  <td align="center" colspan="3"><sub><b>MOVE</b></sub></td>
+  <td rowspan="4"><sub>&nbsp;&nbsp;</sub></td>
+  <td align="center" colspan="3"><sub><b>ACTION</b></sub></td>
+</tr>
+<tr>
+  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Forward x5"><kbd> &nbsp;&#9650;&nbsp; </kbd></a></td><td></td>
+  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=t,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Toggle automap"><kbd> MAP </kbd></a></td><td></td>
+</tr>
+<tr>
+  <td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn left x5"><kbd> &#9664; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Wait one frame"><kbd> &#183; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn right x5"><kbd> &#9654; </kbd></a></td>
+  <td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=p,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open doors, flip switches"><kbd> USE </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Shoot x5"><kbd> &nbsp;FIRE&nbsp; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=x,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open or close the menu"><kbd> ESC </kbd></a></td>
+</tr>
+<tr>
+  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Back x5"><kbd> &nbsp;&#9660;&nbsp; </kbd></a></td><td></td>
+  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=e,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Confirm a menu choice"><kbd> ENTER </kbd></a></td><td></td>
+</tr>
+</table>
 
-### Meta Actions
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/rewind?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Take back the last key"><kbd> &#8630; Undo </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/reset?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Abandon this run and start over"><kbd> Reset </kbd></a>
 
-- <a href="https://doom-api-v2.plexidev.org/input/play-doom/reset/?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite">Reset Game</a>
+<details>
+<summary><b>All controls</b> &mdash; speeds, strafing, weapons, menus</summary>
+
+**Movement speed**
+
+| | | | |
+| --- | --- | --- | --- |
+| Forward | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x1 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> |
+| Back | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x1 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> |
+| Turn left | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x1 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> |
+| Turn right | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x1 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> |
+| Wait | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x1 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> | <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> |
+
+**Strafe** (sidestep without turning)
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=j,j,j,j,j,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Strafe left </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=k,k,k,k,k,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Strafe right </kbd></a>
+
+**Run** (shift + direction, one long stride)
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=U,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> &#9650; </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=D,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> &#9660; </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=L,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> &#9664; </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=R,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> &#9654; </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=s,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Shift </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=a,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Alt </kbd></a>
+
+**Weapons**
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=2,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 2 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=3,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 3 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=4,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 4 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=5,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 5 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=6,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 6 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=7,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> 7 </kbd></a>
+
+**Fire**
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Once </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x5 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a>
+
+**Menus**
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=x,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Escape </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=e,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Enter </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=y,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> Yes </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=n,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> No </kbd></a>
+
+**Wait**
+
+<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x10 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x25 </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite"><kbd> x50 </kbd></a>
+
+</details>
+
+### This run
+
+<img src="https://doom-api-v2.plexidev.org/status/play-doom?image=true" alt="live game state and run history" /><br />
+<img src="https://doom-api-v2.plexidev.org/input/play-doom?image=true" alt="input history" />
 
 ### Videos
 
-- <a href="https://doom-api-v2.plexidev.org/video/play-doom/current">Get full video of current run</a>
-- <a href="https://doom-api-v2.plexidev.org/video/play-doom/full">Get full video of all previous runs combined</a>
-- <a href="https://doom-api-v2.plexidev.org/video/play-doom/combined">Get full video of all previous runs combined + current run</a>
+- <a href="https://doom-api-v2.plexidev.org/video/play-doom/current">This run</a>
+- <a href="https://doom-api-v2.plexidev.org/video/play-doom/full">Every finished run</a>
+- <a href="https://doom-api-v2.plexidev.org/video/play-doom/combined">Everything, including this run</a>
 
 **## END_GAME ##**
 
@@ -140,4 +187,3 @@ All optional; defaults suit the deployment described above.
   been going, and kills/items/secrets. Health, ammo and armour are already on the status bar.
 - Set `TRUST_PROXY=false` if the app is ever exposed directly rather than behind a proxy —
   otherwise the client-address headers are attacker-supplied
-- Use [vscode-drawio](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio) to open `play-doom.drawio` in vscode
