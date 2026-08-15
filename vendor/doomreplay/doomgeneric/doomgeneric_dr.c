@@ -1,4 +1,6 @@
-#include <stdbool.h>
+// No <stdbool.h> here on purpose: doomstat.h reaches doomtype.h, which declares
+// `enum { false, true } boolean`, and that does not compile once stdbool.h has
+// turned those two names into macros. Nothing in this file used bool anyway.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
