@@ -36,10 +36,43 @@ static dr_keys_t g_pressed_last;
 static dr_keys_t g_key_map;
 static replay_data_t g_replay_data;
 
+/**
+ * play-doom: darkens the pixels behind a run of overlay text.
+ *
+ * The overlay is drawn in flat green straight over the scene, and E1M1 opens facing
+ * a wall of near-white computer panels — over those, the text was effectively
+ * invisible. Dimming the backdrop to a quarter costs a small band of scenery and
+ * makes the overlay readable on any texture. Shifting each channel right by two
+ * divides it by four without touching its neighbours.
+ */
+static void darkenTextBackdrop(uint32_t* screen, int nchars, int xoffs, int yoffs) {
+    if (nchars <= 0) return;
+
+    const int pad = 1;
+    int x0 = xoffs - pad;
+    int y0 = yoffs;
+    int x1 = xoffs + nchars * FONT_SIZE_X + pad;
+    int y1 = yoffs + FONT_SIZE_Y;
+
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 > DOOMGENERIC_RESX) x1 = DOOMGENERIC_RESX;
+    if (y1 > DOOMGENERIC_RESY) y1 = DOOMGENERIC_RESY;
+
+    for (int y = y0; y < y1; ++y) {
+        for (int x = x0; x < x1; ++x) {
+            const uint32_t p = screen[y * DOOMGENERIC_RESX + x];
+            screen[y * DOOMGENERIC_RESX + x] = (p >> 2) & 0x3F3F3F3F;
+        }
+    }
+}
+
 static void renderText(uint32_t* screen, const char* text, int xoffs, int yoffs,
                        int ecol) {
     int n = strlen(text);
     if (n) {
+        darkenTextBackdrop(screen, n, xoffs, yoffs);
+
         uint32_t col = 0x0000FF00;
         for (int i = 0; i < n; ++i) {
             for (int y = 0; y < FONT_SIZE_Y; ++y) {
