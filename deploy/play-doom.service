@@ -1,0 +1,28 @@
+[Unit]
+Description=play-doom
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Placeholder — set to wherever this repo actually lives on the VPS.
+WorkingDirectory=/opt/play-doom
+
+ExecStart=/usr/bin/docker compose -f docker/compose.yaml up -d --build
+ExecStop=/usr/bin/docker compose -f docker/compose.yaml down
+ExecReload=/usr/bin/docker compose -f docker/compose.yaml restart
+
+# docker compose down/restart send a real SIGTERM into the container, which
+# src/index.ts's shutdown handler catches — this is what makes the restart clean
+# instead of the old kill-9-and-hope behaviour.
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

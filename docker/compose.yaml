@@ -1,0 +1,21 @@
+services:
+  play-doom:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6677:6677"
+    environment:
+      LOG_LEVEL: info
+      RENDER_CONCURRENCY: 2
+    volumes:
+      - ../data:/app/data
+      - ../doomreplay/doom1.wad:/app/doomreplay/doom1.wad:ro
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:6677/health').then(r => process.exit(r.ok ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
