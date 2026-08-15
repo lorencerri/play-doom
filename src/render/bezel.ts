@@ -15,6 +15,18 @@ import { fileExists } from '../http/serve.ts';
  * generated once per (size, thickness) and cached on disk: it is identical for every
  * frame of every namespace, and regenerating it per render would add a sharp raster to
  * a path measured in milliseconds.
+ *
+ * ## What it costs
+ *
+ * Measured on identical input: **442,505 bytes without, 554,262 with** — about +25% on
+ * the README gif. Two attempts to claw that back mostly failed and are recorded here so
+ * they are not retried: tightening the inner shadow (which falls across the picture)
+ * saved 14.6KB, and quantising the bezel to 16 colours made it *worse*, 562KB, so the
+ * cost is not palette competition as it first appeared. The remaining cost looks
+ * inherent to the extra 24px on each axis and the shadow blending over picture content.
+ *
+ * It is still well under the 847KB the original app served, and `FRAME_BORDER=0` turns
+ * it off, so this is a taste call rather than a problem to keep optimising.
  */
 
 /**
@@ -97,15 +109,7 @@ export async function ensureBezel(gifWidth: number, border: number): Promise<str
 	if (await fileExists(path)) return path;
 
 	await mkdir(config.DATA_DIR, { recursive: true });
-
-	// Quantised hard, and this is the whole reason the bezel is affordable. A gif has
-	// 256 palette entries total; a smoothly graded bezel spends ~100 of them on plastic
-	// and leaves the *picture* dithering against what is left. Measured: the smooth
-	// version cost +126KB on a 442KB gif. Sixteen greys still read as a gradient at this
-	// size and leave the palette to the game.
-	await sharp(Buffer.from(bezelSvg(inner, border)))
-		.png({ palette: true, colours: 16, dither: 0 })
-		.toFile(path);
+	await sharp(Buffer.from(bezelSvg(inner, border))).png().toFile(path);
 
 	return path;
 }
