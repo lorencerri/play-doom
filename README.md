@@ -4,25 +4,16 @@
 
 ### Controls
 
-<table>
-<tr>
-  <td align="center" colspan="3"><sub><b>MOVE</b></sub></td>
-  <td rowspan="4"><sub>&nbsp;&nbsp;</sub></td>
-  <td align="center" colspan="3"><sub><b>ACTION</b></sub></td>
-</tr>
-<tr>
-  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Forward x5"><kbd> &nbsp;&#9650;&nbsp; </kbd></a></td><td></td>
-  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=t,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Toggle automap"><kbd> MAP </kbd></a></td><td></td>
-</tr>
-<tr>
-  <td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn left x5"><kbd> &#9664; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Wait one frame"><kbd> &#183; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn right x5"><kbd> &#9654; </kbd></a></td>
-  <td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=p,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open doors, flip switches"><kbd> USE </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Shoot x5"><kbd> &nbsp;FIRE&nbsp; </kbd></a></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=x,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open or close the menu"><kbd> ESC </kbd></a></td>
-</tr>
-<tr>
-  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Back x5"><kbd> &nbsp;&#9660;&nbsp; </kbd></a></td><td></td>
-  <td></td><td align="center"><a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=e,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Confirm a menu choice"><kbd> ENTER </kbd></a></td><td></td>
-</tr>
-</table>
+<p align="center">
+  <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=u,u,u,u,u,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Forward x5"><kbd> &nbsp;&#9650;&nbsp; </kbd></a><br />
+  <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=l,l,l,l,l,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn left x5"><kbd> &#9664; </kbd></a>&nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Wait one frame"><kbd> &#183; </kbd></a>&nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=r,r,r,r,r,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Turn right x5"><kbd> &#9654; </kbd></a><br />
+  <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=d,d,d,d,d,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Back x5"><kbd> &nbsp;&#9660;&nbsp; </kbd></a>
+</p>
+
+<p align="center">
+  <a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=f,f,f,f,f,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Shoot x5"><kbd> &nbsp;FIRE&nbsp; </kbd></a>&nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=p,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open doors, flip switches"><kbd> USE </kbd></a>&nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=t,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Toggle automap"><kbd> MAP </kbd></a>
+  &nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=x,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Open or close the menu"><kbd> ESC </kbd></a>&nbsp;&nbsp;<a href="https://doom-api-v2.plexidev.org/input/play-doom/append?keys=e,&callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Confirm a menu choice"><kbd> ENTER </kbd></a>
+</p>
 
 <a href="https://doom-api-v2.plexidev.org/input/play-doom/rewind?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Take back the last key"><kbd> &#8630; Undo </kbd></a> <a href="https://doom-api-v2.plexidev.org/input/play-doom/reset?callback=https://github.com/lorencerri/play-doom/tree/claude-rewrite" title="Abandon this run and start over"><kbd> Reset </kbd></a>
 
