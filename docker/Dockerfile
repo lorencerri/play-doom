@@ -36,6 +36,10 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
 COPY src ./src
+# The quick.db migration runs against the mounted data volume, so it has to be
+# reachable from inside the container: `docker compose exec play-doom bun run
+# scripts/migrate-quickdb.ts /app/data/json.sqlite`.
+COPY scripts ./scripts
 COPY tsconfig.json ./
 COPY --from=doom-builder /build/doomgeneric/doomgeneric ./vendor/doomreplay/doomgeneric/doomgeneric
 
