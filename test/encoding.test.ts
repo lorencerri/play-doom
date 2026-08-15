@@ -28,10 +28,20 @@ describe('gifFilterComplex', () => {
 		expect(filter).toContain('diff_mode=rectangle');
 	});
 
+	test('drops the alpha channel first', () => {
+		// Regression test for a bug found only by running it: doomgeneric never writes
+		// the alpha byte of its BGRA frames, so without this the palette pipeline
+		// emits a fully transparent — visually blank — gif. It is still a structurally
+		// valid 640x400 gif with the right frame count, so nothing but looking at the
+		// pixels catches it.
+		expect(gifFilterComplex(0).startsWith('format=rgb24,')).toBe(true);
+		expect(gifFilterComplex(320).startsWith('format=rgb24,')).toBe(true);
+	});
+
 	test('does not scale at width 0', () => {
 		// Anchored: a bare `scale=` also matches paletteuse's `bayer_scale=`.
 		expect(gifFilterComplex(0)).not.toMatch(/(^|,)scale=/);
-		expect(gifFilterComplex(0).startsWith('split[a][b];')).toBe(true);
+		expect(gifFilterComplex(0).startsWith('format=rgb24,split[a][b];')).toBe(true);
 	});
 
 	test('scales before splitting when a width is set', () => {
@@ -39,7 +49,7 @@ describe('gifFilterComplex', () => {
 
 		// Order matters: scaling has to happen before the split, or the palette is
 		// generated from pixels that never reach the output.
-		expect(filter.startsWith('scale=320:-1:flags=lanczos,split[a][b];')).toBe(true);
+		expect(filter.startsWith('format=rgb24,scale=320:-1:flags=lanczos,split[a][b];')).toBe(true);
 	});
 
 	test('feeds palettegen and paletteuse from the same split', () => {

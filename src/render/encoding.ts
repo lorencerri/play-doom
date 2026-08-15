@@ -48,7 +48,13 @@ export function shellArg(value: string): string {
  * capped at 16 frames (routes/frame.ts), about 16MB of raw BGRA.
  */
 export function gifFilterComplex(gifWidth: number): string {
-	const chain: string[] = [];
+	// Mandatory, and not obvious: doomgeneric hands ffmpeg BGRA frames whose alpha
+	// byte it never writes, so alpha is 0 everywhere. The old `-pix_fmt bgr8` dropped
+	// the channel on the way out and the garbage alpha never mattered. A filtergraph
+	// preserves it instead, and `paletteuse` faithfully produces a gif that is
+	// transparent in every pixel — structurally valid, 1.7KB, and completely blank.
+	// Measured on the VPS before this line existed. Do not remove it.
+	const chain: string[] = ['format=rgb24'];
 
 	// Native render is 640x400 (a 2x upscale of Doom's 320x200). Downscaling is a
 	// straight 4x cut in pixels through encode and transfer, but it also halves the
