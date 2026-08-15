@@ -27,7 +27,23 @@ export const paths = {
 
 // A gif covers the last batch of keys, capped so a 50x idle link doesn't produce a
 // 50-frame animation. Carried over exactly — it decides how the README image reads.
-const MAX_GIF_FRAMES = 16;
+export const MAX_GIF_FRAMES = 16;
+
+// Gifs record every other frame, so they cover twice the time for the same size.
+export const GIF_NTHFRAME = 2;
+
+/**
+ * How many frames a gif must record to be guaranteed non-empty.
+ *
+ * doomgeneric writes a frame only when `frame_id % nthframe == 0`. Recording a single
+ * frame at an odd index therefore writes *nothing*, ffmpeg is handed no input, and the
+ * result is a 0-byte gif — which happened to roughly half of all single-key clicks,
+ * the README's "Idle Frame" link among them. Recording at least `nthframe` frames
+ * guarantees one of them lands on a multiple.
+ */
+export function gifFrameCount(lastBatch: string): number {
+	return Math.max(GIF_NTHFRAME, Math.min(lastBatch.length, MAX_GIF_FRAMES));
+}
 
 /**
  * Renders `frame_<ns>.<type>` if the input buffer has moved since it was last made,
@@ -61,11 +77,17 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 			const lastBatch = input[input.length - 1] ?? '';
 
 			const summary = await renderFrame({
-				nrecord: type === 'png' ? 1 : Math.min(lastBatch.length, MAX_GIF_FRAMES),
-				nthframe: type === 'png' ? 1 : 2,
+				nrecord: type === 'png' ? 1 : gifFrameCount(lastBatch),
+				nthframe: type === 'png' ? 1 : GIF_NTHFRAME,
 				outputPath,
 				input: joined,
 			});
+
+			// An empty artifact is a failed render that reported success. doomgeneric
+			// exits 0 even when it hands ffmpeg no frames, and marking that fresh would
+			// cache a broken image behind the hash gate until the next input change.
+			const size = Bun.file(outputPath).size;
+			if (size === 0) throw new Error(`render produced an empty ${type} for ${namespace}`);
 
 			// The replay just ran to the end of the buffer, so its final state is this
 			// namespace's current state — recording it here costs nothing extra.
