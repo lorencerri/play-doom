@@ -1,15 +1,51 @@
-import { appendBatch, getInput, rewindKeys } from '../domain/input.ts';
-import { normalizeInput, validateKeys, validateNamespace } from '../domain/keys.ts';
-import { recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
+import { config } from '../config.ts';
+import { appendBatch, getInput, getInputString, rewindKeys } from '../domain/input.ts';
+import { normalizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
+import { pseudonymousId, recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
 import { incrementStats, setFlags } from '../domain/state.ts';
 import { clientAddressOf } from '../http/client.ts';
+import { conflict, tooManyRequests } from '../http/errors.ts';
 import { boolParam, intParam, stringParam } from '../http/query.ts';
+import { RateLimiter } from '../http/rate-limit.ts';
 import { png, redirectTo, text } from '../http/serve.ts';
 import { logger } from '../logger.ts';
 import { endRun, warmFrames } from '../render/artifacts.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 const MAX_REWIND = 1024;
+
+// Keyed on the pseudonymous player id, not the raw address — the same identity the
+// unique-player count uses, so no additional information about the client is retained.
+// Clients with no resolvable address share one bucket: that is only reachable when the
+// proxy headers are absent, and sharing is the conservative choice.
+const limiter = new RateLimiter(config.RATE_LIMIT_BURST, config.RATE_LIMIT_PER_MINUTE);
+
+// Buckets accumulate one entry per distinct client, which would be the same unbounded
+// growth the limiter exists to prevent. Full buckets are indistinguishable from fresh
+// ones, so dropping them is free.
+setInterval(() => limiter.sweep(), 5 * 60_000).unref();
+
+function enforceRateLimit(req: Request, route: string): void {
+	const address = clientAddressOf(req);
+	const key = address ? pseudonymousId(address) : 'anonymous';
+
+	const result = limiter.take(key);
+	if (result.allowed) return;
+
+	logger.warn({ route, retryAfter: result.retryAfterSeconds }, 'rate limited');
+	throw tooManyRequests(`Too many requests. Try again in ${result.retryAfterSeconds}s.`);
+}
+
+/** Enforces the ceiling on how long one run may get. */
+function enforceBufferCap(namespace: string, incoming: number): void {
+	const current = tokenize(getInputString(namespace)).length;
+	if (current + incoming <= config.MAX_BUFFER_TOKENS) return;
+
+	logger.warn({ namespace, current, incoming }, 'buffer cap reached');
+	throw conflict(
+		`This run has reached its ${config.MAX_BUFFER_TOKENS}-frame limit. Reset the game to start a new one.`,
+	);
+}
 
 export async function getInputRoute(req: Request, params: Record<string, string>): Promise<Response> {
 	const namespace = validateNamespace(params.namespace ?? '');
@@ -29,6 +65,9 @@ export async function appendRoute(req: Request, params: Record<string, string>):
 	const namespace = validateNamespace(params.namespace ?? '');
 	const url = new URL(req.url);
 	const keys = validateKeys(stringParam(url, 'keys'));
+
+	enforceRateLimit(req, 'input.append');
+	enforceBufferCap(namespace, tokenize(keys).length);
 
 	appendBatch(namespace, keys);
 	incrementStats({ actions: 1, keysPressed: keys.length });
@@ -53,6 +92,9 @@ export async function rewindRoute(req: Request, params: Record<string, string>):
 	// Documented in the README as `?amount=N` keys, which the original never read —
 	// it popped one whole batch instead, so rewinding a 25× move undid all 25.
 	const amount = intParam(url, 'amount', 1, 1, MAX_REWIND);
+
+	enforceRateLimit(req, 'input.rewind');
+
 	const removed = rewindKeys(namespace, amount);
 
 	incrementStats({ rewinds: 1 });
@@ -70,6 +112,8 @@ export async function rewindRoute(req: Request, params: Record<string, string>):
 export async function resetRoute(req: Request, params: Record<string, string>): Promise<Response> {
 	const namespace = validateNamespace(params.namespace ?? '');
 	const url = new URL(req.url);
+
+	enforceRateLimit(req, 'input.reset');
 
 	// The clear/archive half is shared with AUTO_ARCHIVE_ON_DEATH, so a run ends the
 	// same way whether a player clicked reset or the engine reported a death.

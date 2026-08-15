@@ -43,7 +43,17 @@ export function recordPlayerAction(address: string | undefined): void {
 	if (!address) return;
 
 	const now = Date.now();
-	upsertPlayer.run(playerId(address, playerSalt()), now, now);
+	upsertPlayer.run(pseudonymousId(address), now, now);
+}
+
+/**
+ * The stable, non-reversible id for a client address.
+ *
+ * Exposed so rate limiting can key on the same identity the player count uses, rather
+ * than introducing a second place that handles raw addresses.
+ */
+export function pseudonymousId(address: string): string {
+	return playerId(address, playerSalt());
 }
 
 const upsertVariant = db.query<never, [string, number, number]>(`

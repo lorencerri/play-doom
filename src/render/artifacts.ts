@@ -8,10 +8,11 @@ import { addSegment, clearSegments, listSegments, nextSeq } from '../domain/segm
 import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
 import { recordRun, setStatus } from '../domain/status.ts';
 import { logger } from '../logger.ts';
+import { overloaded } from '../http/errors.ts';
 import { fileExists } from '../http/serve.ts';
 import { renderFrame, renderVideo } from './doom.ts';
 import { concat } from './ffmpeg.ts';
-import { enqueue } from './queue.ts';
+import { enqueue, QueueFullError } from './queue.ts';
 
 export const paths = {
 	frame: (namespace: string, type: string) => `${config.DATA_DIR}/frame_${namespace}.${type}`,
@@ -49,27 +50,41 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 
 	if (await current()) return outputPath;
 
-	await enqueue(namespace, `frame:${type}`, async () => {
-		// Re-check inside the queue: an eager render kicked off by the click and a
-		// lazy one from the image request routinely race, and the loser should not
-		// redo the work it was waiting on.
-		if (await current()) return;
+	try {
+		await enqueue(namespace, `frame:${type}`, async () => {
+			// Re-check inside the queue: an eager render kicked off by the click and a
+			// lazy one from the image request routinely race, and the loser should not
+			// redo the work it was waiting on.
+			if (await current()) return;
 
-		const lastBatch = input[input.length - 1] ?? '';
+			const lastBatch = input[input.length - 1] ?? '';
 
-		const summary = await renderFrame({
-			nrecord: type === 'png' ? 1 : Math.min(lastBatch.length, MAX_GIF_FRAMES),
-			nthframe: type === 'png' ? 1 : 2,
-			outputPath,
-			input: joined,
+			const summary = await renderFrame({
+				nrecord: type === 'png' ? 1 : Math.min(lastBatch.length, MAX_GIF_FRAMES),
+				nthframe: type === 'png' ? 1 : 2,
+				outputPath,
+				input: joined,
+			});
+
+			// The replay just ran to the end of the buffer, so its final state is this
+			// namespace's current state — recording it here costs nothing extra.
+			if (summary && setStatus(namespace, summary)) onDeath(namespace);
+
+			setRenderHash(namespace, artifact, hash);
 		});
+	} catch (err) {
+		if (!(err instanceof QueueFullError)) throw err;
 
-		// The replay just ran to the end of the buffer, so its final state is this
-		// namespace's current state — recording it here costs nothing extra.
-		if (summary && setStatus(namespace, summary)) onDeath(namespace);
+		// A saturated queue is not a reason to break the README. A previously rendered
+		// frame is stale by exactly the keys that arrived during the overload, which is
+		// a far better answer than a broken image.
+		if (await fileExists(outputPath)) {
+			logger.warn({ namespace, type, waiting: err.waiting }, 'queue full, serving the previous frame');
+			return outputPath;
+		}
 
-		setRenderHash(namespace, artifact, hash);
-	});
+		throw overloaded('too many renders in progress, try again shortly');
+	}
 
 	return outputPath;
 }

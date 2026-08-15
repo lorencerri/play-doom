@@ -72,6 +72,19 @@ database, and only that hash is stored — the address itself is not written any
 count is taken from `/input/*` clicks only, because GitHub proxies README images through
 Camo, so `/frame` traffic is a handful of GitHub servers rather than visitors.
 
+**Limits**
+
+Every control link is a plain GET that anyone can click, and each click queues a render,
+so the endpoints are rate limited per client (60/min sustained, bursts of 20) using the
+same pseudonymous id as the player count — no extra information about the client is kept.
+Beyond that the render queue sheds load rather than growing: if it saturates, a namespace
+that already has a rendered frame gets that frame back, stale by whatever arrived during
+the overload, instead of a broken image.
+
+A single run is capped at `MAX_BUFFER_TOKENS` frames. Real runs sit in the hundreds, so
+the default of 100,000 is roughly 200x headroom — it exists so a buffer cannot be driven
+to a length that makes every render slow for everyone.
+
 **Where the game state comes from**
 
 The engine reports its own final state on stdout when a replay ends, and the API keeps it
@@ -101,6 +114,11 @@ All optional; defaults suit the deployment described above.
 | `EAGER_RENDER` | `true` | Render on append rather than on request |
 | `EAGER_FRAME_TYPES` | `gif` | Which types to render ahead of the request |
 | `FRAME_STATUS_OVERLAY` | `true` | Draw level, time and progress in the frame |
+| `AUTO_ARCHIVE_ON_DEATH` | `false` | End and archive the run automatically when the player dies |
+| `RATE_LIMIT_PER_MINUTE` | `60` | Sustained per-client limit on the control links |
+| `RATE_LIMIT_BURST` | `20` | How many clicks are allowed back to back |
+| `RENDER_QUEUE_MAX` | `64` | Renders allowed to wait for a slot before shedding load |
+| `MAX_BUFFER_TOKENS` | `100000` | Ceiling on how long a single run may get |
 | `TRUST_PROXY` | `true` | Read the client address from proxy headers |
 | `GIF_WIDTH` | `0` | Downscale width for the gif; `0` keeps 640x400 |
 | `MP4_PRESET` / `MP4_CRF` | `veryfast` / `23` | x264 tuning for the videos |

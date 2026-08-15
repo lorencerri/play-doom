@@ -17,3 +17,16 @@ export function badRequest(message: string): HttpError {
 export function notFoundError(message: string): HttpError {
 	return new HttpError(404, message);
 }
+
+export function tooManyRequests(message: string): HttpError {
+	return new HttpError(429, message);
+}
+
+/** The render queue is saturated and nothing usable is already on disk. */
+export function overloaded(message: string): HttpError {
+	return new HttpError(503, message);
+}
+
+export function conflict(message: string): HttpError {
+	return new HttpError(409, message);
+}

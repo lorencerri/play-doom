@@ -1,6 +1,14 @@
 import { config } from '../config.ts';
 import { logger } from '../logger.ts';
 
+/** Thrown when the queue is saturated, so callers can serve something stale instead. */
+export class QueueFullError extends Error {
+	constructor(readonly waiting: number) {
+		super(`render queue is full (${waiting} waiting)`);
+		this.name = 'QueueFullError';
+	}
+}
+
 // Global cap on concurrently running renders. Every state change used to spawn a
 // doomgeneric immediately with nothing counting them, so a burst of traffic — or
 // one profile visit fanning out to several images — spawned unbounded
@@ -30,6 +38,13 @@ function release(): void {
 const chains = new Map<string, Promise<unknown>>();
 
 export function enqueue<T>(namespace: string, label: string, job: () => Promise<T>): Promise<T> {
+	// Refuse before joining the chain rather than after: a job admitted here is
+	// committed to run, and the point is to stop the backlog growing at all.
+	if (waiting.length >= config.RENDER_QUEUE_MAX) {
+		logger.warn({ namespace, label, waiting: waiting.length }, 'render queue full, rejecting');
+		return Promise.reject(new QueueFullError(waiting.length));
+	}
+
 	const previous = chains.get(namespace) ?? Promise.resolve();
 
 	const queued = previous.then(

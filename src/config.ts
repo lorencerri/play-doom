@@ -51,6 +51,25 @@ export const schema = z.object({
 		)
 		.pipe(z.array(z.enum(FILETYPES))),
 
+	// Per-client limits on the control links. Every one is a plain GET anyone can click,
+	// and each click queues a render. 60/min sustained with a burst of 20 is far above
+	// what clicking a README link by hand produces, and far below what it takes to keep
+	// the render queue permanently saturated.
+	RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
+	RATE_LIMIT_BURST: z.coerce.number().int().positive().default(20),
+
+	// Hard cap on renders waiting for a slot. RENDER_CONCURRENCY bounds what runs at
+	// once, but the queue behind it was unbounded — sustained clicking grew memory and
+	// pushed every other namespace's frame further back.
+	RENDER_QUEUE_MAX: z.coerce.number().int().positive().default(64),
+
+	// Upper bound on how long a single run may get. Render cost is ~9.2µs per frame
+	// (measured), so this is roughly a second of replay at the ceiling. Real runs sit
+	// in the hundreds of frames, so this is ~200x headroom and will never bite normal
+	// play — it exists so a buffer cannot be driven to a length that makes every render
+	// slow for everyone.
+	MAX_BUFFER_TOKENS: z.coerce.number().int().positive().default(100_000),
+
 	// End the run automatically when the player dies, archiving it and starting fresh.
 	// Off by default: it changes how the game behaves for everyone clicking the README,
 	// which is a decision for whoever owns the profile, not a default worth assuming.
