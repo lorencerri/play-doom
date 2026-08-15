@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { newSalt, playerId, resolveClientAddress } from '../src/http/client.ts';
 
 function request(headers: Record<string, string>): Request {
-	return new Request('https://doom-api.plexidev.org/input/github/append?keys=u,', { headers });
+	return new Request('https://doom-api-v2.plexidev.org/input/github/append?keys=u,', { headers });
 }
 
 describe('resolveClientAddress', () => {
