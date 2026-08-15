@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { rename, rm } from 'node:fs/promises';
 import { config } from '../config.ts';
 import { getInput, getInputString } from '../domain/input.ts';
-import { FILETYPES, type Filetype } from '../domain/keys.ts';
+import type { Filetype } from '../domain/keys.ts';
 import { getRenderHash, getState, setFlags, setRenderHash } from '../domain/state.ts';
 import { logger } from '../logger.ts';
 import { fileExists } from '../http/serve.ts';
@@ -67,12 +67,18 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 }
 
 /**
- * Starts rendering every frame type without waiting for the result (plan 1.2).
+ * Starts rendering the frame types listed in `EAGER_FRAME_TYPES` without waiting for
+ * the result (plan 1.2).
  *
  * Rendering used to begin when GitHub's image proxy fetched the frame, which put a
  * full doomgeneric replay plus an encode on the viewer's critical path. Starting it
  * when the key is appended means the proxy usually finds a finished file, and the
  * click returns its redirect immediately either way.
+ *
+ * It warms one type rather than all of them because these jobs contend: they take
+ * the same per-namespace mutex, so warming a png the README never requests simply
+ * delays the gif it does. Types left out are not disabled, only deferred to
+ * `ensureFrame` on the request that actually wants them.
  *
  * Errors terminate here on purpose. This is detached work behind an already-sent
  * response; the lazy path in `ensureFrame` will retry on the next request, and an
@@ -82,7 +88,7 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 export function warmFrames(namespace: string): void {
 	if (!config.EAGER_RENDER) return;
 
-	for (const type of FILETYPES) {
+	for (const type of config.EAGER_FRAME_TYPES) {
 		ensureFrame(namespace, type).catch((err) => {
 			logger.warn({ namespace, type, err }, 'eager frame render failed');
 		});

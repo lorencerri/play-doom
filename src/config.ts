@@ -1,6 +1,10 @@
 import { z } from 'zod';
+// keys.ts pulls in only http/errors.ts, which imports nothing — no cycle back here.
+import { FILETYPES } from './domain/keys.ts';
 
-const schema = z.object({
+// Exported so the parsing rules can be tested against arbitrary environments.
+// `config` itself is parsed once from Bun.env at import time and cannot be varied.
+export const schema = z.object({
 	PORT: z.coerce.number().int().positive().default(6677),
 	DATA_DIR: z.string().default('./data'),
 	LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
@@ -21,6 +25,25 @@ const schema = z.object({
 		.enum(['true', 'false'])
 		.default('true')
 		.transform((value) => value === 'true'),
+
+	// Which frame types the eager render actually produces. The profile README only
+	// ever fetches `?type=.gif`, but warming both types put two doomgeneric runs and
+	// two ffmpeg starts on every click — and because they share the per-namespace
+	// mutex, the gif waited behind a png nobody asked for. Measured on the VPS: the
+	// gif request following an append went from ~510ms to ~320ms by dropping png here.
+	//
+	// This only changes what is rendered *ahead* of the request. `/frame/:ns` with no
+	// type still serves a png; it just renders on demand, as it did before §1.2.
+	EAGER_FRAME_TYPES: z
+		.string()
+		.default('gif')
+		.transform((value) =>
+			value
+				.split(',')
+				.map((type) => type.trim())
+				.filter((type) => type.length > 0),
+		)
+		.pipe(z.array(z.enum(FILETYPES))),
 
 	// Downscale width for the gif, or 0 to keep doomgeneric's native 640x400. 320
 	// gives Doom's true resolution and roughly a quarter of the pixels, at the cost
