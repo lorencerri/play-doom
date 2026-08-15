@@ -42,7 +42,8 @@ An API wrapper for [@lorencerri/doomreplay](https://github.com/lorencerri/doomre
 **Endpoints**
 
 ```sh
-GET /stats?image=true # Returns the global stats
+GET /stats # Returns an image of the global stats
+GET /stats?image=false # Returns the same stats as JSON, including the per-namespace breakdown
 
 GET /video/:namespace/current # Returns a video of the full current run
 GET /video/:namespace/full # Returns a video of all the previous runs combined
@@ -56,8 +57,45 @@ GET /input/:namespace/append?keys=""&callback="" # Appends keys to the input buf
 GET /input/:namespace/rewind?amount=1&callback="" # Rewinds the input buffer by N keys
 ```
 
+**Statistics collected**
+
+`/stats` reports actions, keys pressed and rewinds globally and per namespace, plus
+two meta counters: **unique inputs** (how many distinct key sequences have ever been
+submitted) and **unique players**.
+
+Players are counted without keeping a record of who they were. Each client address is
+run through a keyed hash whose salt is generated once per install and never leaves the
+database, and only that hash is stored — the address itself is not written anywhere. The
+count is taken from `/input/*` clicks only, because GitHub proxies README images through
+Camo, so `/frame` traffic is a handful of GitHub servers rather than visitors.
+
+**Configuration**
+
+All optional; defaults suit the deployment described above.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `6677` | Listen port |
+| `DATA_DIR` | `./data` | SQLite file and rendered artifacts |
+| `LOG_LEVEL` | `info` | pino level |
+| `DOOM1_WAD` | `./vendor/doomreplay/doom1.wad` | Path to the WAD |
+| `DOOMGENERIC_BIN` | `./vendor/doomreplay/doomgeneric/doomgeneric` | Path to the built engine |
+| `FFMPEG_BIN` | `ffmpeg` | ffmpeg to encode with |
+| `RENDER_CONCURRENCY` | `2` | Max concurrent render subprocesses |
+| `RENDER_TIMEOUT_MS` | `30000` | Kill a render that outlives this |
+| `EAGER_RENDER` | `true` | Render on append rather than on request |
+| `EAGER_FRAME_TYPES` | `gif` | Which types to render ahead of the request |
+| `FRAME_STATUS_OVERLAY` | `true` | Draw level, time and progress in the frame |
+| `TRUST_PROXY` | `true` | Read the client address from proxy headers |
+| `GIF_WIDTH` | `0` | Downscale width for the gif; `0` keeps 640x400 |
+| `MP4_PRESET` / `MP4_CRF` | `veryfast` / `23` | x264 tuning for the videos |
+
 **Notes**
 
 - A plain `git clone` is enough — doomreplay is vendored under `vendor/`, not a submodule
-- `doom1.wad` is not in the repo; put it at `vendor/doomreplay/doom1.wad` or set `DOOM1_WAD_PATH`
+- `doom1.wad` is not in the repo; put it at `vendor/doomreplay/doom1.wad` or set `DOOM1_WAD`
+- The frame overlay shows what Doom's status bar cannot: which level, how long the run has
+  been going, and kills/items/secrets. Health, ammo and armour are already on the status bar.
+- Set `TRUST_PROXY=false` if the app is ever exposed directly rather than behind a proxy —
+  otherwise the client-address headers are attacker-supplied
 - Use [vscode-drawio](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio) to open `play-doom.drawio` in vscode
