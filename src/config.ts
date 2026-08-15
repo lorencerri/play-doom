@@ -18,6 +18,14 @@ export const schema = z.object({
 	RENDER_CONCURRENCY: z.coerce.number().int().positive().default(2),
 	RENDER_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
+	// Rendering a *video* is O(the whole run), unlike a frame render which only records
+	// the tail — so the 30s frame budget is the wrong bound for it. Measured on the live
+	// github run: 2,432 frames encoded at ~79fps, killed at 30.1s having reached frame
+	// 2,368, which is what produced the 502s. VIDEO_MAX_FRAMES caps a run at 10,000
+	// frames, so ~127s is the worst case and this leaves roughly 2x headroom. Keep it
+	// below Bun's idleTimeout (255s) so the render, not the socket, is what times out.
+	VIDEO_TIMEOUT_MS: z.coerce.number().int().positive().default(240_000),
+
 	// Concat is stream-copy, so it is bound by disk rather than CPU and scales with
 	// the size of the archive, not with how long the run was. Folding the live 623MB
 	// `full_github.mp4` measured 11.4s cold on the VPS and grows with every reset, so

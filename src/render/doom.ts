@@ -62,6 +62,9 @@ export async function renderVideo(input: string, outputPath: string): Promise<Ru
 		doomArgs({ nrecord: VIDEO_MAX_FRAMES, nthframe: 1, framerate: VIDEO_FRAMERATE, outputPath, input }),
 		`doomgeneric video → ${outputPath}`,
 		encoderEnv(),
+		// A video re-encodes the entire run, so it needs its own budget — see the note
+		// on VIDEO_TIMEOUT_MS. The frame budget killed this mid-encode.
+		config.VIDEO_TIMEOUT_MS,
 	);
 
 	return parseRunSummary(stdout);

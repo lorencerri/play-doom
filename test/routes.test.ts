@@ -50,7 +50,7 @@ describe('GET /input/:namespace', () => {
 	});
 
 	test('rejects an invalid namespace', () => {
-		expect(getInputRoute(get('/input/bad-ns'), { namespace: 'bad-ns' })).rejects.toThrow(
+		expect(getInputRoute(get('/input/bad ns'), { namespace: 'bad ns' })).rejects.toThrow(
 			'Invalid characters in namespace.',
 		);
 	});

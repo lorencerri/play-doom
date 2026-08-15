@@ -8,7 +8,13 @@ import { badRequest } from '../http/errors.ts';
 // is two Up presses and `,,,` is three idle frames.
 const KEY_CHARS = 'xelrudaspftynUDLRjk2-7';
 
-const NAMESPACE_RE = /^[a-zA-Z0-9_]+$/;
+// Hyphens allowed alongside word characters, so a namespace can be named after the
+// repo it is embedded in (`play-doom`). Safe everywhere a namespace is used: it goes
+// into subprocess argv arrays rather than shell strings, into parameterised SQL, and
+// into filenames only after a fixed prefix (`frame_<ns>.gif`), so it can never start
+// a path or be read as a flag. Dots and slashes stay excluded, which is what keeps
+// this from being a path-traversal surface.
+const NAMESPACE_RE = /^[a-zA-Z0-9_-]+$/;
 const KEYS_RE = new RegExp(`^[,${KEY_CHARS}]+$`);
 
 // Splits an input string into individual frame tokens (`u,`, `x,`, or a bare `,`).

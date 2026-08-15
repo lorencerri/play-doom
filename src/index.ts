@@ -5,6 +5,15 @@ import { logger } from './logger.ts';
 
 const server = Bun.serve({
 	port: config.PORT,
+
+	// Bun defaults to a 10 second idle timeout, which silently closed the socket on
+	// every video request: rendering a run is O(its length) and takes tens of seconds,
+	// so the client saw a 502 from nginx ("upstream prematurely closed connection")
+	// while the render was still working. 255 is Bun's maximum, and it is deliberately
+	// above VIDEO_TIMEOUT_MS so the render is what gives up first — with an error that
+	// says so — rather than the connection dying underneath a job that would have
+	// finished.
+	idleTimeout: 255,
 	// The table is built from portable (Request, params) handlers; Bun's own Routes
 	// type is generic over each literal path pattern and can't infer through that
 	// indirection. This cast is the one place the two representations meet.

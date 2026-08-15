@@ -15,12 +15,24 @@ describe('validateNamespace', () => {
 		expect(validateNamespace('test_NS_123')).toBe('test_NS_123');
 	});
 
+	test('accepts hyphens, so a namespace can be named after its repo', () => {
+		expect(validateNamespace('play-doom')).toBe('play-doom');
+	});
+
 	test('rejects empty, overlong, and out-of-alphabet names', () => {
 		expect(() => validateNamespace('')).toThrow(HttpError);
 		expect(() => validateNamespace('a'.repeat(33))).toThrow(HttpError);
-		expect(() => validateNamespace('has-dash')).toThrow(HttpError);
+		expect(() => validateNamespace('has space')).toThrow(HttpError);
+		expect(() => validateNamespace('has.dot')).toThrow(HttpError);
+	});
+
+	test('still refuses anything that could escape the data directory', () => {
 		// A namespace lands in a file path, so traversal must not survive validation.
+		// Allowing hyphens must not have widened this.
 		expect(() => validateNamespace('../../etc/passwd')).toThrow(HttpError);
+		expect(() => validateNamespace('..')).toThrow(HttpError);
+		expect(() => validateNamespace('a/b')).toThrow(HttpError);
+		expect(() => validateNamespace('a\\b')).toThrow(HttpError);
 	});
 });
 
