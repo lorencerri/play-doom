@@ -54,25 +54,38 @@ export async function run(bin: string, args: string[], label: string, env?: Reco
 		proc.kill('SIGKILL');
 	}, config.RENDER_TIMEOUT_MS);
 
+	// stdout is drained, not just piped. Two reasons, both learned the hard way:
+	// a pipe nobody reads fills at 64KB and blocks the writer forever (which the
+	// timeout below would then report as a hang of unknown cause), and doomgeneric
+	// prints the exact ffmpeg command line it built to stdout — the single most
+	// useful line there is when a render produces a file that is valid but wrong.
+	let stdout = '';
 	let stderr = '';
 	try {
-		[stderr] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+		[stdout, stderr] = await Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]);
 	} finally {
 		clearTimeout(timer);
 	}
 
 	const ms = Math.round(performance.now() - start);
 	const tail = stderr.trim().split('\n').slice(-20).join('\n');
+	const outTail = stdout.trim().split('\n').slice(-20).join('\n');
 
 	if (timedOut) {
-		logger.error({ label, bin, ms, stderr: tail }, 'subprocess timed out');
+		logger.error({ label, bin, ms, stderr: tail, stdout: outTail }, 'subprocess timed out');
 		throw new SubprocessError(`${label} timed out after ${config.RENDER_TIMEOUT_MS}ms`, bin, null, tail);
 	}
 
 	if (proc.exitCode !== 0) {
-		logger.error({ label, bin, exitCode: proc.exitCode, ms, stderr: tail }, 'subprocess failed');
+		logger.error({ label, bin, exitCode: proc.exitCode, ms, stderr: tail, stdout: outTail }, 'subprocess failed');
 		throw new SubprocessError(`${label} exited with code ${proc.exitCode}`, bin, proc.exitCode, tail);
 	}
+
+	logger.trace({ label, bin, stdout: outTail }, 'subprocess output');
 
 	logger.debug({ label, bin, ms }, 'subprocess completed');
 }
