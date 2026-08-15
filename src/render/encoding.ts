@@ -47,7 +47,22 @@ export function shellArg(value: string): string {
  * palette before applying it. That is fine at the sizes involved — a frame gif is
  * capped at 16 frames (routes/frame.ts), about 16MB of raw BGRA.
  */
-export function gifFilterComplex(gifWidth: number): string {
+/**
+ * A two-tone surround: a one-pixel light edge, then the outer band.
+ *
+ * Drawn here rather than in the C so it costs no rebuild to change, and so the videos
+ * — which are downloads, not page furniture — stay untouched. The inner line is what
+ * separates it from the dark scenery Doom mostly renders; without it an 8px black
+ * border around a dark frame is invisible.
+ */
+export function borderFilter(border: number): string[] {
+	if (border <= 0) return [];
+
+	const inner = 'pad=iw+2:ih+2:1:1:color=0x3A3C41';
+	return [inner, `pad=iw+${border * 2}:ih+${border * 2}:${border}:${border}:color=0x151517`];
+}
+
+export function gifFilterComplex(gifWidth: number, border = 0): string {
 	// Mandatory, and not obvious: doomgeneric hands ffmpeg BGRA frames whose alpha
 	// byte it never writes, so alpha is 0 everywhere. The old `-pix_fmt bgr8` dropped
 	// the channel on the way out and the garbage alpha never mattered. A filtergraph
@@ -61,6 +76,10 @@ export function gifFilterComplex(gifWidth: number): string {
 	// overlay text doomgeneric draws, so it is off by default until it has been
 	// eyeballed against the README. Plan 1.3.
 	if (gifWidth > 0) chain.push(`scale=${gifWidth}:-1:flags=lanczos`);
+
+	// After any downscale, so the border is a constant thickness on the served image
+	// rather than being scaled with the frame.
+	chain.push(...borderFilter(border));
 
 	chain.push('split[a][b]');
 
@@ -76,6 +95,7 @@ export type EncoderOptions = {
 	gifWidth: number;
 	mp4Preset: string;
 	mp4Crf: number;
+	frameBorder: number;
 };
 
 /**
@@ -101,10 +121,15 @@ export function buildEncoderEnv(opts: EncoderOptions): Record<string, string> {
 
 		// `-loop -1` is preserved deliberately: in ffmpeg's gif muxer that disables
 		// looping, which is what the freeze frames doomgeneric appends are for.
-		DR_FFMPEG_ARGS_GIF: `-filter_complex ${shellArg(gifFilterComplex(opts.gifWidth))} -loop -1`,
+		DR_FFMPEG_ARGS_GIF: `-filter_complex ${shellArg(gifFilterComplex(opts.gifWidth, opts.frameBorder))} -loop -1`,
 
-		DR_FFMPEG_ARGS_PNG: '-pix_fmt rgb24',
+		DR_FFMPEG_ARGS_PNG: pngArgs(opts.frameBorder),
 	};
+}
+
+function pngArgs(border: number): string {
+	const filters = borderFilter(border);
+	return filters.length === 0 ? '-pix_fmt rgb24' : `-vf ${shellArg(filters.join(','))} -pix_fmt rgb24`;
 }
 
 export function encoderEnv(): Record<string, string> {
@@ -113,5 +138,6 @@ export function encoderEnv(): Record<string, string> {
 		gifWidth: config.GIF_WIDTH,
 		mp4Preset: config.MP4_PRESET,
 		mp4Crf: config.MP4_CRF,
+		frameBorder: config.FRAME_BORDER,
 	});
 }

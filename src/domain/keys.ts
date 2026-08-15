@@ -86,6 +86,26 @@ export function convertKeyToName(key: string): string {
 	return KEY_NAMES[key] ?? 'Unknown';
 }
 
+/**
+ * The tail of the input history, as a readable sentence.
+ *
+ * `normalizeInput` describes the whole run, which grows without bound — a long run
+ * renders as a single grey strip thousands of pixels wide that says nothing. Showing
+ * the most recent groups answers the question people actually have ("what just
+ * happened?"), and the count of what was dropped keeps it honest rather than silently
+ * truncating.
+ */
+export function summarizeInput(input: string | string[], maxGroups: number): string {
+	const full = normalizeInput(input);
+	if (full.length === 0) return full;
+
+	const groups = full.split(', ');
+	if (groups.length <= maxGroups) return full;
+
+	const dropped = groups.length - maxGroups;
+	return `(+${dropped} earlier) ${groups.slice(-maxGroups).join(', ')}`;
+}
+
 export function normalizeInput(input: string | string[]): string {
 	const joined = Array.isArray(input) ? input.join('') : input;
 

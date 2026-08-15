@@ -1,6 +1,6 @@
 import { config } from '../config.ts';
 import { appendBatch, getInput, getInputString, rewindKeys } from '../domain/input.ts';
-import { normalizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
+import { normalizeInput, summarizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
 import { pseudonymousId, recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
 import { incrementStats, setFlags } from '../domain/state.ts';
 import { clientAddressOf } from '../http/client.ts';
@@ -13,6 +13,11 @@ import { endRun, warmFrames } from '../render/artifacts.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
 const MAX_REWIND = 1024;
+
+// How many key groups the history image shows. A run of a few hundred actions renders
+// as a strip thousands of pixels wide otherwise, which GitHub scales down to an
+// illegible smear — and the recent end is the part anyone actually reads.
+const DEFAULT_HISTORY_GROUPS = 12;
 
 // Keyed on the pseudonymous player id, not the raw address — the same identity the
 // unique-player count uses, so no additional information about the client is retained.
@@ -55,10 +60,15 @@ export async function getInputRoute(req: Request, params: Record<string, string>
 
 	if (!boolParam(url, 'image', false)) {
 		if (boolParam(url, 'readable', false)) return Response.json(input);
+		// The text form is for reading programmatically, so it stays complete.
 		return text(normalizeInput(input));
 	}
 
-	return png(await renderTextImage(normalizeInput(input)), `input_${namespace}.png`);
+	// The image is the one embedded in the README, where an unbounded strip is the
+	// problem. `?groups=` overrides for anyone who wants the lot.
+	const groups = intParam(url, 'groups', DEFAULT_HISTORY_GROUPS, 1, 1000);
+
+	return png(await renderTextImage(summarizeInput(input, groups)), `input_${namespace}.png`);
 }
 
 export async function appendRoute(req: Request, params: Record<string, string>): Promise<Response> {

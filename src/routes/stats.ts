@@ -3,6 +3,7 @@ import { getStats } from '../domain/state.ts';
 import { getStatus } from '../domain/status.ts';
 import { boolParam } from '../http/query.ts';
 import { png } from '../http/serve.ts';
+import { renderStatsCard } from '../render/stats-card.ts';
 import { levelName } from '../render/summary.ts';
 import { renderTextImage } from '../render/text-image.ts';
 
@@ -65,12 +66,26 @@ export async function statsRoute(req: Request): Promise<Response> {
 	const stats = getStats();
 	const meta = getMetaStats();
 
+	const url = new URL(req.url);
+
 	// The README embeds `/stats` with no query string and expects an image.
-	if (!boolParam(new URL(req.url), 'image', true)) {
+	if (!boolParam(url, 'image', true)) {
 		return Response.json({ ...stats, ...meta });
 	}
 
-	return png(await renderTextImage(statsText(stats, meta)), 'stats.png');
+	// `?text=true` keeps the aligned-table rendering; the card is the default because
+	// it is what the README embeds.
+	if (boolParam(url, 'text', false)) {
+		return png(await renderTextImage(statsText(stats, meta)), 'stats.png');
+	}
+
+	return png(
+		await renderStatsCard(stats, meta, (namespace) => {
+			const status = getStatus(namespace);
+			return status ? levelName(status) : undefined;
+		}),
+		'stats.png',
+	);
 }
 
 export function homeRoute(): Response {

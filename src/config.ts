@@ -104,6 +104,12 @@ export const schema = z.object({
 		.default('true')
 		.transform((value) => value === 'true'),
 
+	// Width in pixels of the surround drawn around frame images, or 0 for none. It
+	// reads as a screen rather than an image floating in the page, which matters on a
+	// README where the frame sits directly against body text. Applies to the gif and
+	// png only — the videos are downloads and are left clean.
+	FRAME_BORDER: z.coerce.number().int().min(0).max(64).default(8),
+
 	// Downscale width for the gif, or 0 to keep doomgeneric's native 640x400. 320
 	// gives Doom's true resolution and roughly a quarter of the pixels, at the cost
 	// of halving the overlay text (§1.3) — worth eyeballing before switching on.

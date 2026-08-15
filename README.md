@@ -90,7 +90,8 @@ GET /video/:namespace/combined # Returns a video of all the previous runs combin
 GET /frame/:namespace?type=gif # Returns the current frame
 
 GET /status/:namespace # Returns the live game state, best run and recent runs as JSON
-GET /status/:namespace?image=true&runs=5 # Returns the same as an image
+GET /status/:namespace?image=true&runs=5 # Returns the same as a card image (&text=true for plain text)
+GET /input/:namespace?image=true&groups=12 # History image, most recent N groups
 
 GET /input/:namespace?image=true # Returns an image or text
 GET /input/:namespace/reset?callback="" # Resets the input buffer
@@ -168,6 +169,8 @@ All optional; defaults suit the deployment described above.
 | `MAX_BUFFER_TOKENS` | `100000` | Ceiling on how long a single run may get |
 | `TRUST_PROXY` | `true` | Read the client address from proxy headers |
 | `GIF_WIDTH` | `0` | Downscale width for the gif; `0` keeps 640x400 |
+| `FRAME_BORDER` | `8` | Surround drawn around frame images; `0` for none |
+| `FRAME_BORDER` | `8` | Surround drawn around frame images; `0` for none |
 | `MP4_PRESET` / `MP4_CRF` | `veryfast` / `23` | x264 tuning for the videos |
 
 **Notes**

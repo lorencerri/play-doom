@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
 	convertKeyToName,
 	normalizeInput,
+	summarizeInput,
 	tokenize,
 	validateFiletype,
 	validateKeys,
@@ -104,5 +105,32 @@ describe('convertKeyToName', () => {
 
 	test('falls back for anything else', () => {
 		expect(convertKeyToName('z')).toBe('Unknown');
+	});
+});
+
+describe('summarizeInput', () => {
+	const long = Array.from({ length: 40 }, (_, i) => (i % 2 === 0 ? 'u,' : 'f,')).join('');
+
+	test('returns a short history unchanged', () => {
+		expect(summarizeInput('u,f,', 12)).toBe(normalizeInput('u,f,'));
+	});
+
+	test('keeps the most recent groups, which is what anyone reads', () => {
+		// The prefix is joined to the first kept group by a space, not a comma, so
+		// four groups split into four parts.
+		expect(summarizeInput(long, 4).split(', ').length).toBe(4);
+		expect(normalizeInput(long).split(', ').length).toBe(40);
+	});
+
+	test('says how much it dropped rather than truncating silently', () => {
+		expect(summarizeInput(long, 4)).toMatch(/^\(\+\d+ earlier\) /);
+	});
+
+	test('ends on the newest action', () => {
+		expect(summarizeInput('u,u,f,', 1)).toContain('Shoot');
+	});
+
+	test('handles an empty buffer', () => {
+		expect(summarizeInput('', 12)).toBe('');
 	});
 });

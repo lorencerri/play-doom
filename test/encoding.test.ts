@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { buildEncoderEnv, gifFilterComplex, shellArg } from '../src/render/encoding.ts';
 
-const opts = { ffmpegBin: 'ffmpeg', gifWidth: 0, mp4Preset: 'veryfast', mp4Crf: 23 };
+const opts = { ffmpegBin: 'ffmpeg', gifWidth: 0, mp4Preset: 'veryfast', mp4Crf: 23, frameBorder: 0 };
 
 describe('shellArg', () => {
 	test('quotes a filtergraph', () => {
@@ -102,5 +102,43 @@ describe('buildEncoderEnv', () => {
 		// doomgeneric hands to popen.
 		expect(gif).toMatch(/-filter_complex "[^"]+"/);
 		expect(gif).toContain(';');
+	});
+});
+
+describe('frame border', () => {
+	test('is absent when the border is zero', () => {
+		expect(gifFilterComplex(0, 0)).not.toContain('pad=');
+		expect(buildEncoderEnv(opts).DR_FFMPEG_ARGS_PNG).toBe('-pix_fmt rgb24');
+	});
+
+	test('pads the gif on both axes by twice the border', () => {
+		const filter = gifFilterComplex(0, 8);
+		expect(filter).toContain('pad=iw+16:ih+16:8:8');
+	});
+
+	test('draws an inner edge as well as the outer band', () => {
+		// Doom renders mostly dark scenery, so a dark border with no light edge is
+		// invisible against it.
+		expect(gifFilterComplex(0, 8)).toContain('pad=iw+2:ih+2:1:1');
+	});
+
+	test('pads after any downscale, so the border is a constant thickness', () => {
+		const filter = gifFilterComplex(320, 8);
+		expect(filter.indexOf('scale=320')).toBeLessThan(filter.indexOf('pad='));
+	});
+
+	test('applies to the png too, quoted for the shell', () => {
+		const args = buildEncoderEnv({ ...opts, frameBorder: 8 }).DR_FFMPEG_ARGS_PNG;
+		expect(args).toContain('-vf "');
+		expect(args).toContain('pad=iw+16:ih+16:8:8');
+	});
+
+	test('leaves the mp4 alone — videos are downloads, not page furniture', () => {
+		expect(buildEncoderEnv({ ...opts, frameBorder: 8 }).DR_FFMPEG_ARGS_MP4).not.toContain('pad=');
+	});
+
+	test('still drops alpha before padding, so the blank-gif fix survives', () => {
+		const filter = gifFilterComplex(0, 8);
+		expect(filter.indexOf('format=rgb24')).toBeLessThan(filter.indexOf('pad='));
 	});
 });
