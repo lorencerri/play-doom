@@ -1,4 +1,5 @@
 import { config } from '../config.ts';
+import { recordHumanActivity } from '../domain/activity.ts';
 import { appendBatch, getInput, getInputString, rewindKeys } from '../domain/input.ts';
 import { normalizeInput, summarizeInput, tokenize, validateKeys, validateNamespace } from '../domain/keys.ts';
 import { pseudonymousId, recordInputVariant, recordNamespaceStats, recordPlayerAction } from '../domain/meta.ts';
@@ -86,6 +87,10 @@ export async function appendRoute(req: Request, params: Record<string, string>):
 	recordNamespaceStats(namespace, { actions: 1, keysPressed: keys.length });
 	recordInputVariant(keys);
 	recordPlayerAction(clientAddressOf(req));
+	// Marks the namespace as being played by a person, which is what holds the idle
+	// autopilot off. Deliberately separate from the input row just written: the bot writes
+	// those too, so the buffer cannot be the measure of human attention.
+	recordHumanActivity(namespace);
 	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 
 	logger.info({ namespace, keys: keys.length }, 'input appended');
@@ -112,6 +117,9 @@ export async function rewindRoute(req: Request, params: Record<string, string>):
 	incrementStats({ rewinds: 1 });
 	recordNamespaceStats(namespace, { rewinds: 1 });
 	recordPlayerAction(clientAddressOf(req));
+	// Counts as attention even though it removed input rather than adding it — somebody
+	// watching the game is somebody the bot should not interrupt.
+	recordHumanActivity(namespace);
 	if (removed > 0) setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 
 	logger.info({ namespace, requested: amount, removed }, 'input rewound');
@@ -131,6 +139,7 @@ export async function resetRoute(req: Request, params: Record<string, string>): 
 	// same way whether a player clicked reset or the engine reported a death.
 	const hadPlay = await endRun(namespace);
 	recordPlayerAction(clientAddressOf(req));
+	recordHumanActivity(namespace);
 
 	logger.info({ namespace, archived: hadPlay }, 'input reset');
 

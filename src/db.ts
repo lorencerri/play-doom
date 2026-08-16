@@ -188,4 +188,27 @@ function ensureColumn(table: string, column: string, definition: string): void {
 // already has the table.
 ensureColumn('namespace_stats', 'deaths', 'deaths INTEGER NOT NULL DEFAULT 0');
 
+// Autopilot bookkeeping. `last_human_at` has to be distinct from `inputs.created_at`
+// because the bot writes input rows too — measuring idleness off the buffer would mean
+// the bot's own move counted as activity and it would never run twice.
+ensureColumn('namespace_state', 'last_human_at', 'last_human_at INTEGER');
+ensureColumn('namespace_state', 'last_bot_at', 'last_bot_at INTEGER');
+ensureColumn('namespace_stats', 'bot_actions', 'bot_actions INTEGER NOT NULL DEFAULT 0');
+
+// Seed `last_human_at` for namespaces that existed before the column did.
+//
+// Without this every pre-existing namespace has NULL and is invisible to the idle scan,
+// which is precisely backwards: a namespace nobody has clicked since the deploy is the
+// one that most needs the bot. Every input row predating this statement was written by a
+// human, so the last one is the honest answer.
+//
+// Idempotent by the COALESCE — it only ever fills a NULL, so a restart cannot rewrite a
+// timestamp that has since been set for real.
+db.query<never, [number]>(`
+	INSERT INTO namespace_state (namespace, updated_at, last_human_at)
+	SELECT namespace, ?, MAX(created_at) FROM inputs GROUP BY namespace
+	ON CONFLICT (namespace) DO UPDATE SET
+		last_human_at = COALESCE(namespace_state.last_human_at, excluded.last_human_at)
+`).run(Date.now());
+
 logger.info({ path: `${config.DATA_DIR}/play-doom.sqlite` }, 'database ready');

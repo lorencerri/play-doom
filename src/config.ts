@@ -118,6 +118,31 @@ export const schema = z.object({
 	// all aftermath.
 	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(32),
 
+	// Let a bot play when nobody has for a while, so a run that ended up dead or wedged
+	// against a wall does not freeze the README image permanently.
+	//
+	// Off by default for the same reason as AUTO_ARCHIVE_ON_DEATH: it visibly changes what
+	// the game does on somebody's profile, which is the profile owner's call and not a
+	// default worth assuming.
+	AUTOPILOT: z
+		.enum(['true', 'false'])
+		.default('false')
+		.transform((value) => value === 'true'),
+
+	// How long since a *person* last touched a namespace before the bot may play it. A day
+	// is long enough that it never takes a turn from someone mid-session, and short enough
+	// that a profile visited weekly is never showing a frozen frame.
+	AUTOPILOT_IDLE_HOURS: z.coerce.number().positive().default(24),
+
+	// Minimum gap between the bot's own turns on one namespace. Each turn costs a render,
+	// and the point is that the picture keeps changing, not that the bot finishes E1M1.
+	AUTOPILOT_EVERY_MINUTES: z.coerce.number().positive().default(60),
+
+	// Give up on a namespace nobody has touched in this long. Without a bound the bot
+	// plays every namespace that has ever existed, forever, so the cost of the feature
+	// grows with how many were ever created rather than with how many are still read.
+	AUTOPILOT_ABANDON_DAYS: z.coerce.number().positive().default(30),
+
 	// Whether to believe the client-address headers the proxy sets. True is correct
 	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
 	// Set false if the app is ever exposed directly, where those headers would be

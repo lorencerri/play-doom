@@ -77,17 +77,20 @@ export type NamespaceDelta = {
 	rewinds?: number;
 	runs?: number;
 	deaths?: number;
+	/** Turns taken by the idle autopilot. Deliberately not folded into `actions`. */
+	botActions?: number;
 };
 
-const upsertNamespaceStats = db.query<never, [string, number, number, number, number, number, number, number]>(`
-	INSERT INTO namespace_stats (namespace, actions, keys_pressed, rewinds, runs, deaths, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?)
+const upsertNamespaceStats = db.query<never, [string, number, number, number, number, number, number, number, number]>(`
+	INSERT INTO namespace_stats (namespace, actions, keys_pressed, rewinds, runs, deaths, bot_actions, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	ON CONFLICT (namespace) DO UPDATE SET
 		actions      = actions + excluded.actions,
 		keys_pressed = keys_pressed + excluded.keys_pressed,
 		rewinds      = rewinds + excluded.rewinds,
 		runs         = runs + excluded.runs,
 		deaths       = deaths + excluded.deaths,
+		bot_actions  = bot_actions + excluded.bot_actions,
 		updated_at   = ?
 `);
 
@@ -100,6 +103,7 @@ export function recordNamespaceStats(namespace: string, delta: NamespaceDelta): 
 		delta.rewinds ?? 0,
 		delta.runs ?? 0,
 		delta.deaths ?? 0,
+		delta.botActions ?? 0,
 		now,
 		now,
 	);
@@ -112,6 +116,7 @@ export type NamespaceStats = {
 	rewinds: number;
 	runs: number;
 	deaths: number;
+	botActions: number;
 };
 
 export type MetaStats = {
@@ -125,9 +130,19 @@ const countPlayers = db.query<{ n: number }, []>('SELECT COUNT(*) AS n FROM play
 const countVariants = db.query<{ n: number }, []>('SELECT COUNT(*) AS n FROM input_variants');
 
 const selectNamespaces = db.query<
-	{ namespace: string; actions: number; keys_pressed: number; rewinds: number; runs: number; deaths: number },
+	{
+		namespace: string;
+		actions: number;
+		keys_pressed: number;
+		rewinds: number;
+		runs: number;
+		deaths: number;
+		bot_actions: number;
+	},
 	[]
->('SELECT namespace, actions, keys_pressed, rewinds, runs, deaths FROM namespace_stats ORDER BY actions DESC');
+>(
+	'SELECT namespace, actions, keys_pressed, rewinds, runs, deaths, bot_actions FROM namespace_stats ORDER BY actions DESC',
+);
 
 const selectTopVariants = db.query<{ keys: string; uses: number }, [number]>(
 	'SELECT keys, uses FROM input_variants ORDER BY uses DESC LIMIT ?',
@@ -144,6 +159,7 @@ export function getMetaStats(topInputs = 5): MetaStats {
 			rewinds: row.rewinds,
 			runs: row.runs,
 			deaths: row.deaths,
+			botActions: row.bot_actions,
 		})),
 		topInputs: selectTopVariants.all(topInputs),
 	};
