@@ -273,3 +273,15 @@ describe('the generator page copy', () => {
 		expect(html).not.toContain('Letters, numbers, hyphens and underscores. Your username');
 	});
 });
+
+describe('the namespace field', () => {
+	test('starts empty, so the explanation is what a visitor reads', async () => {
+		// Prefilling "doom" overwrote the hint with an availability check before anyone
+		// could read it, and pointed every visitor at the same obvious name — two
+		// strangers would have landed in one game without meaning to.
+		const html = await newRoute(get('/new')).text();
+
+		expect(html).toContain('id="ns" value="" placeholder="your-username"');
+		expect(html).not.toContain('id="ns" value="doom"');
+	});
+});

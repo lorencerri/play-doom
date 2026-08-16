@@ -150,7 +150,14 @@ export function newRoute(req: Request): Response {
   <p class="lede">One shared game per namespace. Everyone who clicks your README plays the same run &mdash; including you.</p>
 
   <label for="ns">Namespace</label>
-  <input id="ns" value="doom" spellcheck="false" autocapitalize="off" autocomplete="off" />
+  <!--
+    Deliberately empty. Prefilling "doom" meant the explanation below was overwritten by
+    an availability check before anyone could read it, and it pointed every visitor at
+    the same obvious name — two strangers would have landed in one game without meaning
+    to. An empty field shows what a namespace *is*, then answers availability once they
+    have chosen.
+  -->
+  <input id="ns" value="" placeholder="your-username" spellcheck="false" autocapitalize="off" autocomplete="off" />
   <p class="hint" id="nsHint">Each namespace is its own game. Pick something unique &mdash; your username works well.</p>
 
   <label for="cb">Send clicks back to</label>
@@ -184,9 +191,17 @@ export function newRoute(req: Request): Response {
   var nsHint = document.getElementById('nsHint');
 
   var VALID = /^[a-zA-Z0-9_-]{1,32}$/;
+  var EXPLAIN = 'Each namespace is its own game. Pick something unique — your username works well.';
 
   function checkName() {
     var value = ns.value.trim();
+    if (value === '') {
+      // Back to the explanation rather than an error: an empty field is where somebody
+      // starts, not something they got wrong.
+      nsHint.className = 'hint';
+      nsHint.textContent = EXPLAIN;
+      return;
+    }
     if (!VALID.test(value)) {
       nsHint.className = 'hint bad';
       nsHint.textContent = 'Letters, numbers, hyphens and underscores only, up to 32 characters.';
@@ -214,6 +229,16 @@ export function newRoute(req: Request): Response {
 
   go.addEventListener('click', function () {
     status.textContent = '';
+
+    // Guarded here as well as on the server: with the field empty the server would fall
+    // back to its own default namespace and hand back markup for a game the reader never
+    // chose, which is worse than an error.
+    if (ns.value.trim() === '') {
+      ns.focus();
+      status.textContent = 'Pick a namespace first.';
+      return;
+    }
+
     var url = origin + '/embed?namespace=' + encodeURIComponent(ns.value.trim()) +
               '&callback=' + encodeURIComponent(cb.value.trim());
 
