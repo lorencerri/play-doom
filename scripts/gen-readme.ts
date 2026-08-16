@@ -23,7 +23,14 @@ const API = arg('api', 'https://doom-api-v2.plexidev.org');
 const NS = arg('namespace', 'play-doom');
 const CB = arg('callback', 'https://github.com/lorencerri/play-doom');
 
-const rep = (key: string, n: number) => `${key},`.repeat(n);
+/**
+ * `n` frames of one key.
+ *
+ * Idle is a bare separator rather than a key plus one, so repeating `,` through the
+ * general form gives `,,` per frame and waits twice as long as the label claims — which
+ * is what "wait x10" in the details block had been doing.
+ */
+const rep = (key: string, n: number) => (key === ',' ? ','.repeat(n) : `${key},`.repeat(n));
 const append = (keys: string) => `${API}/input/${NS}/append?keys=${keys}&callback=${CB}`;
 const gap = '&nbsp;&nbsp;';
 
@@ -73,15 +80,31 @@ const key = (label: string, keys: string, title: string) =>
 const plain = (label: string, path: string, title: string) =>
 	`<a href="${API}/${path}?callback=${CB}" title="${title}"><kbd> ${label} </kbd></a>`;
 
+/**
+ * The same six controls at a speed the moulded pad cannot carry.
+ *
+ * The pad moves five frames per press, which is the right default — one frame barely
+ * turns the player — but crossing a room five frames at a time is tedious, so the row
+ * is repeated at 1x and 25x. "single presses" rather than "one frame at a time": the
+ * latter described the implementation instead of what the reader is choosing between.
+ */
+function speedRow(label: string, times: number): string[] {
+	const suffix = times === 1 ? '' : ` x${times}`;
+	const cap = (glyph: string, k: string, name: string) => key(glyph, rep(k, times), `${name}${suffix}`);
+
+	return [
+		`  <sub>${label}</sub><br />`,
+		`  ${cap('&#9664;', 'l', 'Turn left')}${gap}${cap('&#9650;', 'u', 'Forward')}${gap}` +
+			`${cap('&#9660;', 'd', 'Back')}${gap}${cap('&#9654;', 'r', 'Turn right')}${gap}` +
+			`${cap('fire', 'f', 'Shoot')}${gap}${cap('wait', ',', 'Wait')}<br />`,
+	];
+}
+
 const fine = [
 	'<p align="center">',
-	// The moulded pad moves five frames per press; this row is the single-press version
-	// of the same controls. "one frame at a time" described the implementation rather
-	// than what the reader is choosing between.
-	'  <sub>single presses</sub><br />',
-	`  ${key('&#9664;', 'l,', 'Turn left one frame')}${gap}${key('&#9650;', 'u,', 'Forward one frame')}${gap}` +
-		`${key('&#9660;', 'd,', 'Back one frame')}${gap}${key('&#9654;', 'r,', 'Turn right one frame')}${gap}` +
-		`${key('fire', 'f,', 'Shoot once')}${gap}${key('wait', ',', 'Wait one frame')}`,
+	...speedRow('single presses', 1),
+	'  <br />',
+	...speedRow('x25 presses', 25),
 	'</p>',
 ].join('\n');
 
