@@ -1,7 +1,7 @@
 import { getStoredBatches } from '../domain/input.ts';
 import { validateNamespace } from '../domain/keys.ts';
 import { badRequest } from '../http/errors.ts';
-import { stringParam } from '../http/query.ts';
+import { boolParam, stringParam } from '../http/query.ts';
 import { readmeBlock } from '../render/embed.ts';
 
 /**
@@ -66,7 +66,11 @@ export function embedRoute(req: Request): Response {
 	const namespace = validateNamespace(stringParam(url, 'namespace', 'doom'));
 	const callback = validateCallback(stringParam(url, 'callback', ''));
 
-	const block = readmeBlock({ api: originOf(req), namespace, callback });
+	// `?screen=false` puts the animated frame back in place of the clickable grid. The
+	// two cannot share a panel, so this is the only way to ask for the old block.
+	const screen = boolParam(url, 'screen', true);
+
+	const block = readmeBlock({ api: originOf(req), namespace, callback, screen });
 
 	return new Response(block, {
 		headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },

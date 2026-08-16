@@ -15,6 +15,7 @@ import { renderFrame, renderVideo } from './doom.ts';
 import { concat } from './ffmpeg.ts';
 import { recordRenderFailure, recordRenderSuccess } from './health.ts';
 import { enqueue, frameLane, QueueFullError, videoLane } from './queue.ts';
+import { sliceScreen } from './screen.ts';
 
 export const paths = {
 	frame: (namespace: string, type: string) => `${config.DATA_DIR}/frame_${namespace}.${type}`,
@@ -264,6 +265,28 @@ export function warmFrames(namespace: string): void {
 			logger.warn({ namespace, type, err }, 'eager frame render failed');
 		});
 	}
+
+	// The clickable grid is cut from the png, so warming it is tied to the png already
+	// being warmed rather than to a switch of its own. A README that still embeds the gif
+	// pays nothing for a feature it does not use; one built around the grid gets it ahead
+	// of the proxy by setting `EAGER_FRAME_TYPES=png`.
+	if (config.EAGER_FRAME_TYPES.includes('png')) {
+		ensureScreenTiles(namespace).catch((err) => {
+			logger.warn({ namespace, err }, 'eager screen slice failed');
+		});
+	}
+}
+
+/**
+ * Cuts the current frame into the grid of clickable tiles the README embeds.
+ *
+ * Lazy by default: the first tile request renders the png and slices it, and the other
+ * thirty-odd requests of the same grid arrive while that is still running and wait on it.
+ * That is the pre-eager-render behaviour, and it is the right default here — the cost only
+ * lands on namespaces whose README actually asks for tiles.
+ */
+export async function ensureScreenTiles(namespace: string): Promise<void> {
+	await sliceScreen(namespace, await ensureFrame(namespace, 'png'));
 }
 
 /** Renders `current_<ns>.mp4` if the buffer has moved since it was last made. */

@@ -21,5 +21,7 @@ console.log(
 		namespace: arg('namespace', 'play-doom'),
 		callback: arg('callback', 'https://github.com/lorencerri/play-doom'),
 		stats: process.argv.includes('--stats'),
+		// The clickable grid replaces the animated frame; `--no-screen` keeps the gif.
+		screen: !process.argv.includes('--no-screen'),
 	}),
 );

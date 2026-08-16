@@ -8,6 +8,7 @@ import { deathRoute } from './routes/death.ts';
 import { embedRoute, namespaceCheckRoute, newRoute } from './routes/embed.ts';
 import { frameRoute } from './routes/frame.ts';
 import { healthRoute } from './routes/health.ts';
+import { screenRoute } from './routes/screen.ts';
 import { appendRoute, getInputRoute, resetRoute, rewindRoute } from './routes/input.ts';
 import { homeRoute, statsRoute } from './routes/stats.ts';
 import { statusRoute } from './routes/status.ts';
@@ -95,6 +96,7 @@ export const routes = withTrailingSlash({
 	'/status/:namespace': wrap('status', statusRoute),
 	'/achievements/:namespace': wrap('achievements', achievementsRoute),
 	'/controller/:tile': wrap('controller', controllerRoute),
+	'/screen/:namespace/:tile': wrap('screen', screenRoute),
 
 	'/input/:namespace': wrap('input.get', getInputRoute),
 	'/input/:namespace/append': wrap('input.append', appendRoute),

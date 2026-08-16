@@ -1,4 +1,5 @@
 import { controllerRows, type ControlId } from './controller.ts';
+import { screenRows } from './screen.ts';
 
 /**
  * The README game block: ~60 links, every one of them a control.
@@ -24,6 +25,18 @@ export type EmbedOptions = {
 	stats?: boolean;
 	/** Link to the generator. Off for the generator's own preview, which is already there. */
 	promote?: boolean;
+	/**
+	 * Make the picture itself clickable, instead of embedding the animated frame.
+	 *
+	 * The two cannot coexist in one panel and it is not a rendering limitation: a grid of
+	 * animated tiles would be thirty gifs each starting its loop whenever it happened to
+	 * finish loading, so a moving scene would arrive shattered. Static tiles are also
+	 * *cheaper* than the gif they replace — a png render skips the palette pipeline
+	 * entirely, and thirty-three crops of one frame come to less than one animation.
+	 *
+	 * What is lost is the replay of the move just made. Set false to keep it.
+	 */
+	screen?: boolean;
 };
 
 /**
@@ -47,7 +60,7 @@ function attr(value: string): string {
 }
 
 export function readmeBlock(options: EmbedOptions): string {
-	const { api, namespace, callback, stats = false, promote = true } = options;
+	const { api, namespace, callback, stats = false, promote = true, screen = true } = options;
 
 	const API = api.replace(/\/+$/, '');
 	const append = (keys: string) => attr(`${API}/input/${namespace}/append?keys=${keys}&callback=${callback}`);
@@ -76,22 +89,48 @@ export function readmeBlock(options: EmbedOptions): string {
 	 * the text baseline and the descender leaves a ~4px gap that cuts the D-pad in half.
 	 * There must also be no whitespace between the tags, for the same reason.
 	 */
-	const controller = (): string => {
-		const rows = controllerRows().map((row) =>
-			row
-				.map((tile) => {
-					const img = `<img align="top" src="${API}/controller/${tile.name}.png" />`;
-					if (!tile.control) return img;
-					const { href, title } = CONTROLS[tile.control];
-					return `<a href="${href}" title="${title}">${img}</a>`;
-				})
-				.join(''),
+	const grid = (rows: string[], caption?: string): string =>
+		[
+			'<p align="center">',
+			...(caption ? [`  <sub>${caption}</sub><br />`] : []),
+			...rows.map((r, i) => `${r}${i < rows.length - 1 ? '<br />' : ''}`),
+			'</p>',
+		].join('\n');
+
+	const controller = (): string =>
+		grid(
+			controllerRows().map((row) =>
+				row
+					.map((tile) => {
+						const img = `<img align="top" src="${API}/controller/${tile.name}.png" />`;
+						if (!tile.control) return img;
+						const { href, title } = CONTROLS[tile.control];
+						return `<a href="${href}" title="${title}">${img}</a>`;
+					})
+					.join(''),
+			),
 		);
 
-		return ['<p align="center">', ...rows.map((r, i) => `${r}${i < rows.length - 1 ? '<br />' : ''}`), '</p>'].join(
-			'\n',
+	/**
+	 * The picture, cut into links.
+	 *
+	 * Captioned because nothing about a grid of seamless tiles says it is clickable — it
+	 * looks exactly like the single image it replaces, which is the point everywhere except
+	 * at the moment somebody has to discover it.
+	 */
+	const clickableScreen = (): string =>
+		grid(
+			screenRows().map((row) =>
+				row
+					.map((tile) => {
+						const img = `<img align="top" src="${API}/screen/${namespace}/${tile.name}.png" />`;
+						if (!tile.keys) return img;
+						return `<a href="${append(tile.keys)}" title="${attr(tile.title ?? '')}">${img}</a>`;
+					})
+					.join(''),
+			),
+			'click the screen to turn and walk there',
 		);
-	};
 
 	/** Key caps for what the moulded pad cannot carry. */
 	const key = (label: string, keys: string, title: string) =>
@@ -176,9 +215,11 @@ export function readmeBlock(options: EmbedOptions): string {
 		...(promote ? [`  <sub><a href="${API}/new">add to your own GitHub README</a></sub>`] : []),
 		'</p>',
 		'',
-		'<p align="center">',
-		`  <img src="${API}/frame/${namespace}/?type=.gif" alt="the current frame" />`,
-		'</p>',
+		screen
+			? clickableScreen()
+			: ['<p align="center">', `  <img src="${API}/frame/${namespace}/?type=.gif" alt="the current frame" />`, '</p>'].join(
+					'\n',
+				),
 		'',
 		controller(),
 		'',

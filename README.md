@@ -104,6 +104,7 @@ GET /video/:namespace/full # Returns a video of all the previous runs combined
 GET /video/:namespace/combined # Returns a video of all the previous runs combined, plus the current run
 
 GET /frame/:namespace?type=gif # Returns the current frame
+GET /screen/:namespace/:tile.png # One tile of the clickable screen grid (see src/render/screen.ts)
 
 GET /status/:namespace # Returns the live game state, best run and recent runs as JSON
 GET /status/:namespace?image=true&runs=5 # Returns the same as a card image (&text=true for plain text)
