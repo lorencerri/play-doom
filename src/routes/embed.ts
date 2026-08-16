@@ -162,7 +162,7 @@ export function newRoute(req: Request): Response {
 
   <label for="cb">Send clicks back to</label>
   <input id="cb" value="https://github.com/" spellcheck="false" autocapitalize="off" autocomplete="off" />
-  <p class="hint" id="cbHint">The page a reader returns to after pressing a control &mdash; usually your profile or repo.</p>
+  <p class="hint" id="cbHint">The page a reader returns to after pressing a control. Follows the namespace until you edit it.</p>
 
   <div class="row">
     <button id="go">Generate</button>
@@ -224,8 +224,31 @@ export function newRoute(req: Request): Response {
       });
   }
 
+  // The callback mirrors the namespace until the reader edits it themselves.
+  //
+  // Almost everyone wants github.com/<their-username> in both fields, so making them
+  // type it twice is friction for nothing. But it has to stop the moment they disagree:
+  // silently overwriting a URL somebody deliberately typed is far worse than not helping
+  // at all. Clearing the field resumes tracking, since an empty box reads as "you take
+  // it" rather than as a considered choice.
+  var CB_BASE = 'https://github.com/';
+  var cbDirty = false;
+
+  cb.addEventListener('input', function () { cbDirty = cb.value.trim() !== ''; });
+
+  function syncCallback() {
+    if (cbDirty) return;
+    cb.value = CB_BASE + ns.value.trim();
+  }
+
   var timer;
-  ns.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(checkName, 300); });
+  ns.addEventListener('input', function () {
+    // Immediate, unlike the availability check below: this is mirroring, and a delay
+    // would read as the field lagging behind the keyboard.
+    syncCallback();
+    clearTimeout(timer);
+    timer = setTimeout(checkName, 300);
+  });
 
   go.addEventListener('click', function () {
     status.textContent = '';

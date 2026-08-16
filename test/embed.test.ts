@@ -285,3 +285,15 @@ describe('the namespace field', () => {
 		expect(html).not.toContain('id="ns" value="doom"');
 	});
 });
+
+describe('the callback field', () => {
+	test('mirrors the namespace, and stops once the reader edits it', async () => {
+		// Behaviour lives in the inline script, so this pins the contract rather than the
+		// mechanics: there is a dirty flag, editing sets it, and the sync respects it.
+		const html = await newRoute(get('/new')).text();
+
+		expect(html).toContain('if (cbDirty) return;');
+		expect(html).toContain("cbDirty = cb.value.trim() !== ''");
+		expect(html).toContain('Follows the namespace until you edit it.');
+	});
+});
