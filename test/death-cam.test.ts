@@ -89,8 +89,15 @@ describe('death cam configuration', () => {
 
 	test('caps the clip length', () => {
 		// This gif is fetched on every profile view and bytes scale with frames.
-		expect(schema.parse({}).DEATH_CAM_FRAMES).toBe(48);
+		expect(schema.parse({}).DEATH_CAM_FRAMES).toBe(32);
 		expect(schema.safeParse({ DEATH_CAM_FRAMES: '1000' }).success).toBe(false);
 		expect(schema.safeParse({ DEATH_CAM_FRAMES: '0' }).success).toBe(false);
+	});
+
+	test('the window outlasts the largest single click', () => {
+		// The README's biggest control appends 25 frames. Recording every other frame
+		// means the window spans 2x this many, so a death anywhere in that click is
+		// still inside the clip rather than the clip being all aftermath.
+		expect(schema.parse({}).DEATH_CAM_FRAMES * 2).toBeGreaterThan(25);
 	});
 });

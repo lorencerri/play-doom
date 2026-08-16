@@ -160,13 +160,18 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
  * ## Why this re-renders instead of trimming a video
  *
  * The obvious cheap path is `ffmpeg -sseof` on the tail of an mp4 that already exists.
- * It is not actually cheaper, and it does not work here. Not cheaper: a render is ~250ms
- * and **~150ms of that is ffmpeg process startup** (measured on the VPS), which a trim
- * pays too — the replay it avoids is ~3ms at live run lengths, because `DR_NeedRender`
- * already skips rendering every frame before the recorded tail. Does not work: the only
- * video guaranteed to end at the death is the archive segment, and `AUTO_ARCHIVE_ON_DEATH`
- * is off by default, so on the live deployment no such file is written until someone
- * resets — by which point the tail is whatever they did after dying.
+ * It is not actually cheaper, and it does not work here.
+ *
+ * Not cheaper: this clip takes ~0.6–1.4s (measured on the VPS), and nearly all of that is
+ * the gif palette pipeline over 48 frames — which a trim pays in full, because it has to
+ * encode the same gif from the same number of frames. What trimming avoids is doomgeneric
+ * startup plus the replay itself, ~50ms of the total: `DR_NeedRender` already skips
+ * rendering every frame before the recorded tail, so simulating a live-length run costs
+ * about 3ms. It buys a rounding error and adds a dependency on a second artifact.
+ *
+ * Does not work: the only video guaranteed to end at the death is the archive segment, and
+ * `AUTO_ARCHIVE_ON_DEATH` is off by default, so on the live deployment no such file is
+ * written until someone resets — by which point the tail is whatever they did after dying.
  *
  * Detached on purpose. This runs inside the frame lane, so awaiting a job on that same
  * lane would deadlock; and a failed clip must never fail the frame render that noticed

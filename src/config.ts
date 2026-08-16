@@ -96,11 +96,27 @@ export const schema = z.object({
 		.transform((value) => value === 'true'),
 
 	// Recorded frames in that clip. doomgeneric records every other frame (GIF_NTHFRAME),
-	// so 48 spans 96 simulated frames — about 2.7s of play at Doom's 35hz tic rate —
-	// replayed over 2.4s at the 20fps frame framerate. The cap exists because this gif
-	// sits on a profile README and is fetched on every view: frames are roughly linear
-	// in bytes, and the normal frame gif is only 16.
-	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(48),
+	// so 32 spans 64 simulated frames — about 1.8s of play at Doom's 35hz tic rate.
+	//
+	// This number is the only real control over how big the clip gets, and it matters:
+	// the image sits on a profile README and is fetched on every view. Measured on the
+	// VPS against a barrel explosion, which is the worst case in Doom — a bright,
+	// full-screen, fast-changing fireball:
+	//
+	//   48 frames 1014KB   32 frames 602KB   24 frames 448KB
+	//
+	// A death without pyrotechnics is far cheaper — the same clip over a mostly static
+	// aftermath is 190KB at 48 frames. Two other levers were measured and rejected.
+	// Downscaling works (320 wide roughly halves it) but breaks the equal panel widths
+	// the README depends on to read as one object, and `GIF_WIDTH` already offers it
+	// globally for anyone who wants it. Shrinking the palette barely helps: 256 → 32
+	// colours only takes the worst case from 1006KB to 666KB, and 32 colours on an
+	// explosion looks it.
+	//
+	// 32 also keeps a margin over the largest single click the README offers (x25 = 25
+	// frames), so the death itself stays inside the window rather than the clip being
+	// all aftermath.
+	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(32),
 
 	// Whether to believe the client-address headers the proxy sets. True is correct
 	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
