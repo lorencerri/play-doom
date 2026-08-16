@@ -1,2 +1,11 @@
 [test]
 preload = ["./test/setup.ts"]
+
+# Scoped to ./test so a bare `bun test` behaves like `bun run test`.
+#
+# Without it, Bun also collects `legacy/src/app.controller.spec.ts` — a NestJS spec for
+# the original app, whose `@nestjs/testing` import is not installed and never will be.
+# That made `bun test` report a failure on a tree where nothing is wrong. The legacy
+# sources stay: `test/input.test.ts` reads `app.service.ts` to prove the bootstrap
+# prefix is still byte-identical to the one the live game has been replaying since 2022.
+root = "./test"
