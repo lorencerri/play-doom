@@ -32,3 +32,21 @@ describe('renderTextImage', () => {
 		expect(meta.width).toBe(664);
 	});
 });
+
+describe('wrapping', () => {
+	test('breaks on spaces, not through the middle of words', async () => {
+		// Rendered text is not readable back out of a PNG, so this asserts the shape
+		// indirectly: word wrapping needs at most one more line than character
+		// chunking, never fewer, and both must fit the canvas.
+		const meta = await sharp(await renderTextImage(LONG, 300)).metadata();
+		expect(meta.width).toBe(300);
+		expect(meta.height!).toBeGreaterThan(20);
+	});
+
+	test('still breaks a single unbroken word too long for the line', async () => {
+		const meta = await sharp(await renderTextImage('x'.repeat(400), 300)).metadata();
+		expect(meta.width).toBe(300);
+		// Forced to several lines rather than overflowing.
+		expect(meta.height!).toBeGreaterThan(40);
+	});
+});

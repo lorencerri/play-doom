@@ -31,6 +31,14 @@ function escapeXml(text: string): string {
 		.replace(/"/g, '&quot;');
 }
 
+/**
+ * Wraps on spaces, falling back to a hard break for a single word longer than the line.
+ *
+ * The original chunked purely by character count, which was invisible at the old
+ * content-derived width because nothing ever wrapped. Once the strip was pinned to the
+ * panel width it started splitting words down the middle — "Spa / ce" — which reads as
+ * broken rather than wrapped.
+ */
 function wrap(text: string, limit = MAX_CHARS_PER_LINE): string[] {
 	const lines: string[] = [];
 
@@ -39,9 +47,28 @@ function wrap(text: string, limit = MAX_CHARS_PER_LINE): string[] {
 			lines.push(paragraph);
 			continue;
 		}
-		for (let i = 0; i < paragraph.length; i += limit) {
-			lines.push(paragraph.slice(i, i + limit));
+
+		let line = '';
+		for (const word of paragraph.split(' ')) {
+			// A word that cannot fit on any line has to be broken somewhere.
+			if (word.length > limit) {
+				if (line) {
+					lines.push(line);
+					line = '';
+				}
+				for (let i = 0; i < word.length; i += limit) lines.push(word.slice(i, i + limit));
+				continue;
+			}
+
+			if (line.length === 0) line = word;
+			else if (line.length + 1 + word.length <= limit) line += ` ${word}`;
+			else {
+				lines.push(line);
+				line = word;
+			}
 		}
+
+		if (line) lines.push(line);
 	}
 
 	return lines.length > 0 ? lines : [''];
