@@ -23,9 +23,9 @@ let cached: Buffer | undefined;
 export async function renderNoDeathCard(): Promise<Buffer> {
 	if (cached) return cached;
 
-	// Deliberately unheaded. The README labels this image "death cam" directly above it,
-	// and a panel captioned DEATH CAM under a caption reading death cam looks like a
-	// mistake. What the placeholder has to say is only that nothing has happened yet.
+	// Deliberately unheaded. The README labels this image "latest death" directly above
+	// it, and a panel repeating that under the caption looks like a mistake. What the
+	// placeholder has to say is only that nothing has happened yet.
 	const body =
 		text('no deaths yet', PAD, 24, { size: 13 }) +
 		text('the last few seconds before a death show up here', PAD, 42, { fill: PALETTE.dim, size: 11 });

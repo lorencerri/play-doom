@@ -192,21 +192,25 @@ export function readmeBlock(options: EmbedOptions): string {
 		`  <img src="${API}/status/${namespace}?image=true" alt="live game state and run history" />`,
 		'</p>',
 		'',
-		// Where the run is, then what it has managed, then how it last went wrong.
+		// The run in progress, then the history. Status and the input log both describe
+		// what is happening right now, so they sit together; achievements and the last
+		// death are retrospective and follow.
+		'<p align="center">',
+		`  <img src="${API}/input/${namespace}?image=true" alt="input history" />`,
+		'</p>',
+		'',
 		'<p align="center">',
 		`  <img src="${API}/achievements/${namespace}" alt="achievements earned in this namespace" />`,
 		'</p>',
 		'',
 		// Labelled, because on its own it is an unannounced gif of Doom sitting directly
-		// under a live gif of Doom. The endpoint always answers with a picture — a
-		// placeholder card until something dies — so this is safe before the first death.
+		// under a live gif of Doom. "latest death" rather than "death cam": the first says
+		// what the picture is, the second is a name for a feature nobody asked about. The
+		// endpoint always answers with a picture — a placeholder card until something dies
+		// — so this is safe before the first death.
 		'<p align="center">',
-		'  <sub>death cam</sub><br />',
+		'  <sub>latest death</sub><br />',
 		`  <img src="${API}/death/${namespace}" alt="the last few seconds before the most recent death" />`,
-		'</p>',
-		'',
-		'<p align="center">',
-		`  <img src="${API}/input/${namespace}?image=true" alt="input history" />`,
 		'</p>',
 		'',
 		'<p align="center">',
