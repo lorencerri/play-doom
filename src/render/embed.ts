@@ -65,8 +65,8 @@ export function readmeBlock(options: EmbedOptions): string {
 		left: { href: append(rep('l', 5)), title: 'Turn left' },
 		right: { href: append(rep('r', 5)), title: 'Turn right' },
 		map: { href: append('t,'), title: 'MAP — toggle the automap' },
-		select: { href: append('x,'), title: 'SELECT — open or close the menu' },
-		start: { href: append('e,'), title: 'START — confirm a menu choice' },
+		menu: { href: append('x,'), title: 'MENU — open or close the menu' },
+		confirm: { href: append('e,'), title: 'SELECT — confirm the highlighted menu choice' },
 		b: { href: append('p,'), title: 'USE — open doors, flip switches' },
 		a: { href: append(rep('f', 5)), title: 'FIRE — shoot' },
 	};

@@ -38,17 +38,30 @@ const y = (i: number) => ROWS.slice(0, i).reduce((a, b) => a + b, 0);
 /** A control's footprint, in grid cells. Cells not covered are inert body. */
 type Region = { id: ControlId; cols: [number, number]; rows: [number, number] };
 
-export type ControlId = 'up' | 'down' | 'left' | 'right' | 'select' | 'start' | 'b' | 'a' | 'map';
+/**
+ * These double as tile filenames, so they are named for what the button *does* rather
+ * than for its printed label.
+ *
+ * The two centre buttons were SELECT and START, which is only meaningful to someone who
+ * grew up with the hardware — on a NES, SELECT cycles options and START opens the menu,
+ * and neither name says so. They now read MENU and SELECT.
+ *
+ * `confirm` rather than reusing `select` for the renamed button: the id is a served
+ * filename, and pointing `select-r2` at a *different* control would silently rewire
+ * anyone holding older markup. Retiring the name means their image 404s, which is a
+ * visible break rather than a button that quietly does the wrong thing.
+ */
+export type ControlId = 'up' | 'down' | 'left' | 'right' | 'menu' | 'confirm' | 'b' | 'a' | 'map';
 
 const REGIONS: Region[] = [
 	{ id: 'up', cols: [2, 3], rows: [1, 2] },
 	{ id: 'left', cols: [1, 2], rows: [2, 3] },
 	{ id: 'right', cols: [3, 4], rows: [2, 3] },
 	{ id: 'down', cols: [2, 3], rows: [3, 4] },
-	// A wide pill above SELECT/START, in space the classic layout leaves empty.
+	// A wide pill above the two centre buttons, in space the classic layout leaves empty.
 	{ id: 'map', cols: [5, 8], rows: [1, 2] },
-	{ id: 'select', cols: [5, 6], rows: [2, 3] },
-	{ id: 'start', cols: [7, 8], rows: [2, 3] },
+	{ id: 'menu', cols: [5, 6], rows: [2, 3] },
+	{ id: 'confirm', cols: [7, 8], rows: [2, 3] },
 	// Down to row 4 so the printed label is part of the target: the labels sit below the
 	// circles, and leaving them out made the caption look clickable while doing nothing.
 	{ id: 'b', cols: [9, 10], rows: [2, 4] },
@@ -145,8 +158,8 @@ function controllerSvg(): string {
 <rect x="${x(9) - 8}" y="${y(1)}" width="${x(12) - x(9) + 16}" height="${ROWS[1]! + ROWS[2]! + 6}" rx="10" fill="#7E2326"/>
 ${dpad()}
 ${bar(5, 8, 1, 'MAP')}
-${pill(5, 'SELECT')}
-${pill(7, 'START')}
+${pill(5, 'MENU')}
+${pill(7, 'SELECT')}
 ${roundButton(x(9) + COLS[9]! / 2, y(2) + ROWS[2]! / 2, 17, 'USE')}
 ${roundButton(x(11) + COLS[11]! / 2, y(2) + ROWS[2]! / 2, 17, 'FIRE')}
 <rect x="10" y="6" width="${WIDTH - 20}" height="2" fill="#ffffff" opacity="0.25"/>
