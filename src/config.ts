@@ -87,6 +87,21 @@ export const schema = z.object({
 		.default('false')
 		.transform((value) => value === 'true'),
 
+	// Keep a short gif of the moments before each death, served at /death/:namespace.
+	// On by default, unlike AUTO_ARCHIVE_ON_DEATH: this only records what happened, it
+	// does not change how the game behaves for anyone clicking the README.
+	DEATH_CAM: z
+		.enum(['true', 'false'])
+		.default('true')
+		.transform((value) => value === 'true'),
+
+	// Recorded frames in that clip. doomgeneric records every other frame (GIF_NTHFRAME),
+	// so 48 spans 96 simulated frames — about 2.7s of play at Doom's 35hz tic rate —
+	// replayed over 2.4s at the 20fps frame framerate. The cap exists because this gif
+	// sits on a profile README and is fetched on every view: frames are roughly linear
+	// in bytes, and the normal frame gif is only 16.
+	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(48),
+
 	// Whether to believe the client-address headers the proxy sets. True is correct
 	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
 	// Set false if the app is ever exposed directly, where those headers would be
