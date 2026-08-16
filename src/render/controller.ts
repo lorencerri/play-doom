@@ -205,7 +205,13 @@ async function currentStamp(): Promise<string | undefined> {
 /** Generates the tiles if they are missing or out of date, and returns the directory. */
 export async function ensureControllerTiles(): Promise<string> {
 	const svg = controllerSvg();
-	const stamp = Bun.hash(svg).toString(16);
+
+	// Hashes the grid as well as the artwork. Hashing only the SVG shipped a live
+	// break: extending the USE/FIRE regions by a row changed which tiles exist without
+	// changing a pixel, so the stamp matched, nothing regenerated, and the README asked
+	// for tiles that had never been written. The cache key has to cover everything the
+	// output depends on, and the tile *set* is part of the output.
+	const stamp = Bun.hash(`${svg}\0${JSON.stringify(controllerRows())}`).toString(16);
 
 	if ((await currentStamp()) === stamp && (await fileExists(`${dir()}/body-0-0.png`))) return dir();
 

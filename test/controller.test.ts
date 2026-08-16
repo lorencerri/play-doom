@@ -65,3 +65,17 @@ describe('artwork staleness', () => {
 		expect(await Bun.file(`${dir}/.artwork`).text()).toBe(stamp);
 	});
 });
+
+describe('generated tiles match the layout', () => {
+	test('every tile the layout names exists on disk', async () => {
+		// This is the test that would have caught shipping a broken README: the regions
+		// were extended by a row, which changed the tile set without changing a pixel,
+		// so nothing regenerated and the page asked for files that did not exist.
+		const { ensureControllerTiles, controllerRows: rows } = await import('../src/render/controller.ts');
+		const dir = await ensureControllerTiles();
+
+		for (const tile of rows().flat()) {
+			expect(await Bun.file(`${dir}/${tile.name}.png`).exists()).toBe(true);
+		}
+	});
+});
