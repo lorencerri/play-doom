@@ -170,6 +170,11 @@ const block = [
 	`  <img src="${API}/status/${NS}?image=true" alt="live game state and run history" />`,
 	'</p>',
 	'',
+	// Where the run is, then what it has managed, then how it last went wrong.
+	'<p align="center">',
+	`  <img src="${API}/achievements/${NS}" alt="achievements earned in this namespace" />`,
+	'</p>',
+	'',
 	// Labelled, because on its own it is an unannounced gif of Doom sitting directly under
 	// a live gif of Doom. The endpoint always answers with a picture — a placeholder card
 	// until something dies — so this markup is safe to ship before the first death.
