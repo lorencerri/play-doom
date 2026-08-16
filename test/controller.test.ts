@@ -7,7 +7,7 @@ describe('controller layout', () => {
 
 	test('every control appears in the grid', () => {
 		const controls = new Set(tiles.map((t) => t.control).filter(Boolean));
-		expect([...controls].sort()).toEqual(['a', 'b', 'down', 'left', 'map', 'right', 'select', 'start', 'up']);
+		expect([...controls].sort()).toEqual(['a', 'b', 'confirm', 'down', 'left', 'map', 'menu', 'right', 'up']);
 	});
 
 	test('tile names are unique, since they are also filenames', () => {
@@ -77,5 +77,20 @@ describe('generated tiles match the layout', () => {
 		for (const tile of rows().flat()) {
 			expect(await Bun.file(`${dir}/${tile.name}.png`).exists()).toBe(true);
 		}
+	});
+});
+
+describe('control ids are served filenames', () => {
+	test('the retired names are gone rather than reused', async () => {
+		// `select` used to mean the menu-open button and `start` the confirm button. The
+		// labels swapped; the ids did not follow, because pointing `select-r2` at a
+		// different control would silently rewire anyone holding older markup. Retired
+		// names must 404, which is a visible break instead of a wrong button.
+		const { controllerRows: rows, controllerTilePath: resolve } = await import('../src/render/controller.ts');
+		const names = new Set(rows().flat().map((t) => t.name));
+
+		expect(names.has('start-r2')).toBe(false);
+		expect(await resolve('start-r2')).toBeUndefined();
+		expect(await resolve('select-r2')).toBeUndefined();
 	});
 });
