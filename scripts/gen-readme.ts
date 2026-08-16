@@ -170,6 +170,14 @@ const block = [
 	`  <img src="${API}/status/${NS}?image=true" alt="live game state and run history" />`,
 	'</p>',
 	'',
+	// Labelled, because on its own it is an unannounced gif of Doom sitting directly under
+	// a live gif of Doom. The endpoint always answers with a picture — a placeholder card
+	// until something dies — so this markup is safe to ship before the first death.
+	'<p align="center">',
+	'  <sub>death cam</sub><br />',
+	`  <img src="${API}/death/${NS}" alt="the last few seconds before the most recent death" />`,
+	'</p>',
+	'',
 	'<p align="center">',
 	`  <img src="${API}/input/${NS}?image=true" alt="input history" />`,
 	'</p>',

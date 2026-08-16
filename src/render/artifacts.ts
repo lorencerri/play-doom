@@ -23,6 +23,12 @@ export const paths = {
 	run: (namespace: string) => `${config.DATA_DIR}/run_${namespace}.mp4`,
 	segment: (namespace: string, seq: number) => `${config.DATA_DIR}/seg_${namespace}_${seq}.mp4`,
 	tmp: (namespace: string, name: string) => `${config.DATA_DIR}/tmp_${name}_${namespace}.mp4`,
+
+	// The death cam and the partial it is renamed from. The `.gif` suffix has to survive
+	// on the partial too: ffmpeg picks its muxer from the extension, so a `.part` ending
+	// would fail to encode rather than merely look untidy.
+	death: (namespace: string) => `${config.DATA_DIR}/death_${namespace}.gif`,
+	deathPart: (namespace: string) => `${config.DATA_DIR}/death_${namespace}.part.gif`,
 };
 
 // A gif covers the last batch of keys, capped so a 50x idle link doesn't produce a
@@ -114,7 +120,10 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 
 			// The replay just ran to the end of the buffer, so its final state is this
 			// namespace's current state — recording it here costs nothing extra.
-			if (summary && setStatus(namespace, summary)) onDeath(namespace);
+			//
+			// `joined` is handed on rather than re-read: it is the input this replay
+			// actually ran, so the death cam is a clip of the death just detected.
+			if (summary && setStatus(namespace, summary)) onDeath(namespace, joined);
 
 			setRenderHash(namespace, artifact, hash);
 		});
@@ -142,6 +151,63 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 }
 
 /**
+ * Records a gif of the moments before a death.
+ *
+ * `input` is the exact buffer the render that detected the death replayed, passed down
+ * rather than re-read: `AUTO_ARCHIVE_ON_DEATH` clears the buffer moments later, and a
+ * clip of the *next* run's opening frames would be worse than no clip at all.
+ *
+ * ## Why this re-renders instead of trimming a video
+ *
+ * The obvious cheap path is `ffmpeg -sseof` on the tail of an mp4 that already exists.
+ * It is not actually cheaper, and it does not work here.
+ *
+ * Not cheaper: this clip takes ~0.6–1.4s (measured on the VPS), and nearly all of that is
+ * the gif palette pipeline over 48 frames — which a trim pays in full, because it has to
+ * encode the same gif from the same number of frames. What trimming avoids is doomgeneric
+ * startup plus the replay itself, ~50ms of the total: `DR_NeedRender` already skips
+ * rendering every frame before the recorded tail, so simulating a live-length run costs
+ * about 3ms. It buys a rounding error and adds a dependency on a second artifact.
+ *
+ * Does not work: the only video guaranteed to end at the death is the archive segment, and
+ * `AUTO_ARCHIVE_ON_DEATH` is off by default, so on the live deployment no such file is
+ * written until someone resets — by which point the tail is whatever they did after dying.
+ *
+ * Detached on purpose. This runs inside the frame lane, so awaiting a job on that same
+ * lane would deadlock; and a failed clip must never fail the frame render that noticed
+ * the death, which is on the README's critical path.
+ */
+function captureDeathCam(namespace: string, input: string): void {
+	if (!config.DEATH_CAM) return;
+
+	queueMicrotask(() => {
+		enqueue(frameLane(namespace), 'frame:death', async () => {
+			const partPath = paths.deathPart(namespace);
+
+			await renderFrame({
+				nrecord: config.DEATH_CAM_FRAMES,
+				nthframe: GIF_NTHFRAME,
+				outputPath: partPath,
+				input,
+			});
+
+			// Same guard as the frame path: doomgeneric exits 0 having handed ffmpeg no
+			// frames, and an empty gif would replace a good clip from an earlier death.
+			if (Bun.file(partPath).size === 0) throw new Error(`death cam produced an empty gif for ${namespace}`);
+
+			// Renamed into place rather than written there. This file is embedded in a
+			// README and fetched constantly, so encoding straight to the served path
+			// would hand somebody a half-written gif.
+			await rename(partPath, paths.death(namespace));
+			logger.info({ namespace }, 'death cam recorded');
+		}).catch((err) => {
+			logger.warn({ namespace, err }, 'death cam render failed');
+			rm(paths.deathPart(namespace), { force: true }).catch(() => {});
+		});
+	});
+}
+
+/**
  * Called once per death, on the alive→dead transition rather than per dead frame.
  *
  * Ending the run automatically is opt-in. It changes how the game behaves for everyone
@@ -149,9 +215,11 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
  * ends — and that is the profile owner's call. Counting the death is not: it happened
  * either way.
  */
-function onDeath(namespace: string): void {
+function onDeath(namespace: string, input: string): void {
 	recordNamespaceStats(namespace, { deaths: 1 });
 	logger.info({ namespace }, 'player died');
+
+	captureDeathCam(namespace, input);
 
 	if (!config.AUTO_ARCHIVE_ON_DEATH) return;
 

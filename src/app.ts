@@ -3,6 +3,7 @@ import { resolveClientAddress, setClientAddress } from './http/client.ts';
 import { HttpError } from './http/errors.ts';
 import { logger } from './logger.ts';
 import { controllerRoute } from './routes/controller.ts';
+import { deathRoute } from './routes/death.ts';
 import { frameRoute } from './routes/frame.ts';
 import { healthRoute } from './routes/health.ts';
 import { appendRoute, getInputRoute, resetRoute, rewindRoute } from './routes/input.ts';
@@ -83,6 +84,7 @@ export const routes = withTrailingSlash({
 	'/stats': wrap('stats', statsRoute),
 
 	'/frame/:namespace': wrap('frame', frameRoute),
+	'/death/:namespace': wrap('death', deathRoute),
 	'/status/:namespace': wrap('status', statusRoute),
 	'/controller/:tile': wrap('controller', controllerRoute),
 
