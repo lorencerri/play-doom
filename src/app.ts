@@ -2,6 +2,7 @@ import { config } from './config.ts';
 import { resolveClientAddress, setClientAddress } from './http/client.ts';
 import { HttpError } from './http/errors.ts';
 import { logger } from './logger.ts';
+import { achievementsRoute } from './routes/achievements.ts';
 import { controllerRoute } from './routes/controller.ts';
 import { deathRoute } from './routes/death.ts';
 import { frameRoute } from './routes/frame.ts';
@@ -86,6 +87,7 @@ export const routes = withTrailingSlash({
 	'/frame/:namespace': wrap('frame', frameRoute),
 	'/death/:namespace': wrap('death', deathRoute),
 	'/status/:namespace': wrap('status', statusRoute),
+	'/achievements/:namespace': wrap('achievements', achievementsRoute),
 	'/controller/:tile': wrap('controller', controllerRoute),
 
 	'/input/:namespace': wrap('input.get', getInputRoute),

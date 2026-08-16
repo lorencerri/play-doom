@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { rename, rm } from 'node:fs/promises';
 import { config } from '../config.ts';
+import { evaluateAchievements } from '../domain/achievements.ts';
 import { clearInput, getInput, getInputString, getStoredBatches } from '../domain/input.ts';
 import { tokenize, type Filetype } from '../domain/keys.ts';
 import { recordNamespaceStats } from '../domain/meta.ts';
@@ -123,7 +124,13 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 			//
 			// `joined` is handed on rather than re-read: it is the input this replay
 			// actually ran, so the death cam is a clip of the death just detected.
-			if (summary && setStatus(namespace, summary)) onDeath(namespace, joined);
+			if (summary) {
+				if (setStatus(namespace, summary)) onDeath(namespace, joined);
+
+				// Same report, a few comparisons, and at most one insert per badge ever.
+				const earned = evaluateAchievements(namespace, summary);
+				if (earned.length > 0) logger.info({ namespace, earned }, 'achievements earned');
+			}
 
 			setRenderHash(namespace, artifact, hash);
 		});

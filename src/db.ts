@@ -119,6 +119,18 @@ db.exec(`
 
 db.exec('CREATE INDEX IF NOT EXISTS run_history_namespace ON run_history (namespace, ended_at DESC);');
 
+// One row per achievement a namespace has earned. Permanent: the primary key makes
+// earning idempotent, so re-rendering the same buffer cannot re-award anything, and a
+// reset does not take back what was already done.
+db.exec(`
+	CREATE TABLE IF NOT EXISTS achievements (
+		namespace TEXT    NOT NULL,
+		id        TEXT    NOT NULL,
+		earned_at INTEGER NOT NULL,
+		PRIMARY KEY (namespace, id)
+	);
+`);
+
 // Small key/value side table. Currently holds only the player-id salt, which has to
 // outlive restarts — see http/client.ts for why it is generated rather than fixed.
 db.exec(`
