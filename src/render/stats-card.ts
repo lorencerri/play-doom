@@ -74,9 +74,16 @@ export function renderStatsCard(
 				),
 			);
 			// The live level sits just under the bar rather than in a column of its own:
-			// it is context for the row, not a number to compare across rows.
-			if (level) body.push(text(level, PAD + 104, y + 24, { fill: PALETTE.dim, size: 10 }));
-			y += level ? ROW + 12 : ROW;
+			// it is context for the row, not a number to compare across rows. Autopilot
+			// turns ride along on the same line — they belong next to the level because
+			// they explain why it moved, and keeping them out of the bar is the point:
+			// the bar answers "how much have people played this".
+			const note = [level, ns.botActions > 0 ? `${n(ns.botActions)} by autopilot` : undefined]
+				.filter(Boolean)
+				.join(' · ');
+
+			if (note) body.push(text(note, PAD + 104, y + 24, { fill: PALETTE.dim, size: 10 }));
+			y += note ? ROW + 12 : ROW;
 		}
 
 		if (meta.namespaces.length > 8) {
