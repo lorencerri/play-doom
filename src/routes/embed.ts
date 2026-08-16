@@ -151,7 +151,7 @@ export function newRoute(req: Request): Response {
 
   <label for="ns">Namespace</label>
   <input id="ns" value="doom" spellcheck="false" autocapitalize="off" autocomplete="off" />
-  <p class="hint" id="nsHint">Letters, numbers, hyphens and underscores. Your username is a good choice.</p>
+  <p class="hint" id="nsHint">Each namespace is its own game. Pick something unique &mdash; your username works well.</p>
 
   <label for="cb">Send clicks back to</label>
   <input id="cb" value="https://github.com/" spellcheck="false" autocapitalize="off" autocomplete="off" />
@@ -197,10 +197,10 @@ export function newRoute(req: Request): Response {
       .then(function (d) {
         if (d.inUse) {
           nsHint.className = 'hint warn';
-          nsHint.textContent = 'Someone is already playing "' + value + '". Pick another name, or join in.';
+          nsHint.textContent = '"' + value + '" already has a game running. Pick another name, unless you mean to join it.';
         } else {
           nsHint.className = 'hint';
-          nsHint.textContent = '"' + value + '" is free. It starts the moment someone clicks.';
+          nsHint.textContent = '"' + value + '" is free — you would be starting a new game.';
         }
       })
       .catch(function () {

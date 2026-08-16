@@ -261,3 +261,15 @@ describe('block ordering', () => {
 		expect(block).not.toContain('death cam');
 	});
 });
+
+describe('the generator page copy', () => {
+	test('the namespace hint says what a namespace does', async () => {
+		// It used to list the allowed characters, which answers a question nobody had
+		// asked yet. What is actually unclear at that point is what the field controls.
+		// The character rules moved to the invalid state, where they are the answer.
+		const html = await newRoute(get('/new')).text();
+
+		expect(html).toContain('Each namespace is its own game');
+		expect(html).not.toContain('Letters, numbers, hyphens and underscores. Your username');
+	});
+});
