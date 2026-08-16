@@ -49,3 +49,19 @@ describe('tile path resolution', () => {
 		expect(await controllerTilePath(name)).toContain(name);
 	});
 });
+
+describe('artwork staleness', () => {
+	test('the stamp changes when the artwork changes', async () => {
+		// Regression guard for the class of bug that hid the bezel: a cache keyed on
+		// "does the file exist" never notices a redesign. If this ever compares equal,
+		// editing a label or a colour will silently keep serving the old tiles.
+		const { ensureControllerTiles } = await import('../src/render/controller.ts');
+		const dir = await ensureControllerTiles();
+		const stamp = await Bun.file(`${dir}/.artwork`).text();
+
+		expect(stamp.length).toBeGreaterThan(0);
+		// Second call is a no-op and must not change the stamp.
+		await ensureControllerTiles();
+		expect(await Bun.file(`${dir}/.artwork`).text()).toBe(stamp);
+	});
+});

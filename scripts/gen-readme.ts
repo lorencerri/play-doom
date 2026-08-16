@@ -42,8 +42,8 @@ const CONTROLS: Record<ControlId, { href: string; title: string }> = {
 	map: { href: append('t,'), title: 'MAP — toggle the automap' },
 	select: { href: append('x,'), title: 'SELECT — open or close the menu' },
 	start: { href: append('e,'), title: 'START — confirm a menu choice' },
-	b: { href: append('p,'), title: 'B — open doors, flip switches' },
-	a: { href: append(rep('f', 5)), title: 'A — fire' },
+	b: { href: append('p,'), title: 'USE — open doors, flip switches' },
+	a: { href: append(rep('f', 5)), title: 'FIRE — shoot' },
 };
 
 /**

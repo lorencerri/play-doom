@@ -70,7 +70,10 @@ function roundButton(cx: number, cy: number, r: number, label: string): string {
 		`<circle cx="${cx}" cy="${cy + 2}" r="${r}" fill="#00000055"/>` +
 		`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${RED}" stroke="${RED_DARK}" stroke-width="2"/>` +
 		`<circle cx="${cx}" cy="${cy - r * 0.28}" r="${r * 0.62}" fill="#ffffff" opacity="0.10"/>` +
-		`<text x="${cx}" y="${cy + r + 15}" fill="${PLASTIC}" font-family="${SANS}" font-size="12" font-weight="bold" text-anchor="middle">${label}</text>`
+		// The label sits below the button, as on the real thing. It is free to overflow
+		// its column: the tiles butt together seamlessly, so a glyph split across two of
+		// them reassembles invisibly.
+		`<text x="${cx}" y="${cy + r + 15}" fill="${PLASTIC}" font-family="${SANS}" font-size="11" font-weight="bold" text-anchor="middle">${label}</text>`
 	);
 }
 
@@ -142,8 +145,8 @@ ${dpad()}
 ${bar(5, 8, 1, 'MAP')}
 ${pill(5, 'SELECT')}
 ${pill(7, 'START')}
-${roundButton(x(9) + COLS[9]! / 2, y(2) + ROWS[2]! / 2, 17, 'B')}
-${roundButton(x(11) + COLS[11]! / 2, y(2) + ROWS[2]! / 2, 17, 'A')}
+${roundButton(x(9) + COLS[9]! / 2, y(2) + ROWS[2]! / 2, 17, 'USE')}
+${roundButton(x(11) + COLS[11]! / 2, y(2) + ROWS[2]! / 2, 17, 'FIRE')}
 <rect x="10" y="6" width="${WIDTH - 20}" height="2" fill="#ffffff" opacity="0.25"/>
 </svg>`;
 }
@@ -183,14 +186,29 @@ export function controllerRows(): Tile[][] {
 }
 
 const dir = () => `${config.DATA_DIR}/controller`;
+const stampPath = () => `${dir()}/.artwork`;
 
-/** Generates the tiles if they are not already on disk, and returns the directory. */
+/**
+ * Regenerates whenever the artwork changes, not just when the tiles are missing.
+ *
+ * Keying a cache on "does the file exist" is how the bezel shipped and never appeared:
+ * the inputs had not moved, so nothing re-rendered and every frame stayed on the old
+ * design. Hashing the SVG means editing a colour or a label is enough to invalidate.
+ */
+async function currentStamp(): Promise<string | undefined> {
+	const file = Bun.file(stampPath());
+	return (await file.exists()) ? file.text() : undefined;
+}
+
+/** Generates the tiles if they are missing or out of date, and returns the directory. */
 export async function ensureControllerTiles(): Promise<string> {
-	const marker = `${dir()}/body-0-0.png`;
-	if (await fileExists(marker)) return dir();
+	const svg = controllerSvg();
+	const stamp = Bun.hash(svg).toString(16);
+
+	if ((await currentStamp()) === stamp && (await fileExists(`${dir()}/body-0-0.png`))) return dir();
 
 	await mkdir(dir(), { recursive: true });
-	const full = await sharp(Buffer.from(controllerSvg())).png().toBuffer();
+	const full = await sharp(Buffer.from(svg)).png().toBuffer();
 
 	for (let r = 0; r < ROWS.length; r++) {
 		let c = 0;
@@ -213,6 +231,10 @@ export async function ensureControllerTiles(): Promise<string> {
 			c += span;
 		}
 	}
+
+	// Written last, so a crash partway through leaves the stamp stale and the next
+	// start retries rather than trusting a half-written set of tiles.
+	await Bun.write(stampPath(), stamp);
 
 	return dir();
 }
