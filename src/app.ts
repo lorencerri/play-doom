@@ -5,6 +5,7 @@ import { logger } from './logger.ts';
 import { achievementsRoute } from './routes/achievements.ts';
 import { controllerRoute } from './routes/controller.ts';
 import { deathRoute } from './routes/death.ts';
+import { embedRoute, namespaceCheckRoute, newRoute } from './routes/embed.ts';
 import { frameRoute } from './routes/frame.ts';
 import { healthRoute } from './routes/health.ts';
 import { appendRoute, getInputRoute, resetRoute, rewindRoute } from './routes/input.ts';
@@ -83,6 +84,11 @@ export const routes = withTrailingSlash({
 	'/': wrap('home', homeRoute),
 	'/health': wrap('health', healthRoute),
 	'/stats': wrap('stats', statsRoute),
+
+	// The generator. `/new` is the page a reader lands on; the other two are what it calls.
+	'/new': wrap('embed.page', newRoute),
+	'/embed': wrap('embed.markdown', embedRoute),
+	'/embed/check': wrap('embed.check', namespaceCheckRoute),
 
 	'/frame/:namespace': wrap('frame', frameRoute),
 	'/death/:namespace': wrap('death', deathRoute),

@@ -143,6 +143,20 @@ export const schema = z.object({
 	// grows with how many were ever created rather than with how many are still read.
 	AUTOPILOT_ABANDON_DAYS: z.coerce.number().positive().default(30),
 
+	// Delete the video of a namespace no person has touched in this many days; 0 disables
+	// the sweep entirely.
+	//
+	// Needed because of the generator page. One namespace is a rounding error — the live
+	// `github` archive is 623MB after four years and nobody minds — but the moment
+	// strangers can create their own, that arrives once per stranger and nothing ever
+	// releases it. Only mp4s go; the gif, png and death cam stay so an abandoned profile
+	// still renders, and the buffer, stats, history and achievements are never touched.
+	//
+	// Idleness rather than a size cap, deliberately: a rolling cap would truncate the
+	// archive of somebody still playing, and that footage is not recoverable. Three months
+	// of nobody clicking is a safer signal than any number of bytes.
+	RETAIN_VIDEO_DAYS: z.coerce.number().min(0).default(90),
+
 	// Whether to believe the client-address headers the proxy sets. True is correct
 	// for this deployment (Cloudflare → nginx → app, app reachable only through it).
 	// Set false if the app is ever exposed directly, where those headers would be
