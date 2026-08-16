@@ -75,7 +75,10 @@ const plain = (label: string, path: string, title: string) =>
 
 const fine = [
 	'<p align="center">',
-	'  <sub>one frame at a time</sub><br />',
+	// The moulded pad moves five frames per press; this row is the single-press version
+	// of the same controls. "one frame at a time" described the implementation rather
+	// than what the reader is choosing between.
+	'  <sub>single presses</sub><br />',
 	`  ${key('&#9664;', 'l,', 'Turn left one frame')}${gap}${key('&#9650;', 'u,', 'Forward one frame')}${gap}` +
 		`${key('&#9660;', 'd,', 'Back one frame')}${gap}${key('&#9654;', 'r,', 'Turn right one frame')}${gap}` +
 		`${key('fire', 'f,', 'Shoot once')}${gap}${key('wait', ',', 'Wait one frame')}`,

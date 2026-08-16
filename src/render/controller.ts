@@ -49,8 +49,10 @@ const REGIONS: Region[] = [
 	{ id: 'map', cols: [5, 8], rows: [1, 2] },
 	{ id: 'select', cols: [5, 6], rows: [2, 3] },
 	{ id: 'start', cols: [7, 8], rows: [2, 3] },
-	{ id: 'b', cols: [9, 10], rows: [2, 3] },
-	{ id: 'a', cols: [11, 12], rows: [2, 3] },
+	// Down to row 4 so the printed label is part of the target: the labels sit below the
+	// circles, and leaving them out made the caption look clickable while doing nothing.
+	{ id: 'b', cols: [9, 10], rows: [2, 4] },
+	{ id: 'a', cols: [11, 12], rows: [2, 4] },
 ];
 
 function regionAt(col: number, row: number): Region | undefined {
