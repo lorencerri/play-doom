@@ -2,6 +2,7 @@ import { notFound, routes } from './app.ts';
 import { startAutopilot } from './autopilot.ts';
 import { config } from './config.ts';
 import { db } from './db.ts';
+import { startRetentionSweep } from './domain/retention.ts';
 import { logger } from './logger.ts';
 
 const server = Bun.serve({
@@ -30,8 +31,9 @@ const server = Bun.serve({
 logger.info({ port: server.port }, 'play-doom listening');
 
 // Started here rather than in app.ts so importing the route table — which every route
-// test does — never starts a timer that plays somebody's game.
+// test does — never starts a timer that plays somebody's game, or deletes their video.
 startAutopilot();
+startRetentionSweep();
 
 // A crash with no trace was the original problem (§ Diagnosed crash causes). These
 // two are the backstop: if something escapes every route's try/catch, log the full
