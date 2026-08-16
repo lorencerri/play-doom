@@ -34,16 +34,16 @@
 </p>
 
 <p align="center">
+  <img src="https://doom-api-v2.plexidev.org/input/play-doom?image=true" alt="input history" />
+</p>
+
+<p align="center">
   <img src="https://doom-api-v2.plexidev.org/achievements/play-doom" alt="achievements earned in this namespace" />
 </p>
 
 <p align="center">
-  <sub>death cam</sub><br />
+  <sub>latest death</sub><br />
   <img src="https://doom-api-v2.plexidev.org/death/play-doom" alt="the last few seconds before the most recent death" />
-</p>
-
-<p align="center">
-  <img src="https://doom-api-v2.plexidev.org/input/play-doom?image=true" alt="input history" />
 </p>
 
 <p align="center">

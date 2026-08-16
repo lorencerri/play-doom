@@ -239,3 +239,25 @@ describe('retention configuration', () => {
 		expect(schema.parse({ RETAIN_VIDEO_DAYS: '0' }).RETAIN_VIDEO_DAYS).toBe(0);
 	});
 });
+
+describe('block ordering', () => {
+	test('the input log sits above the latest death', () => {
+		// Status and the input log both describe the run in progress, so they belong
+		// together; achievements and the last death are retrospective and follow.
+		const block = readmeBlock(OPTS);
+		const at = (needle: string) => block.indexOf(needle);
+
+		expect(at('/status/')).toBeLessThan(at('?image=true'));
+		expect(at('?image=true')).toBeLessThan(at('/achievements/'));
+		expect(at('/achievements/')).toBeLessThan(at('/death/'));
+	});
+
+	test('the death panel says what it is', () => {
+		// "latest death" says what the picture is; "death cam" was a name for a feature
+		// nobody had asked about.
+		const block = readmeBlock(OPTS);
+
+		expect(block).toContain('<sub>latest death</sub>');
+		expect(block).not.toContain('death cam');
+	});
+});

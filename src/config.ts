@@ -95,28 +95,34 @@ export const schema = z.object({
 		.default('true')
 		.transform((value) => value === 'true'),
 
-	// Recorded frames in that clip. doomgeneric records every other frame (GIF_NTHFRAME),
-	// so 32 spans 64 simulated frames — about 1.8s of play at Doom's 35hz tic rate.
+	// Recorded frames in that clip, chosen to land on roughly five seconds.
+	//
+	// doomgeneric records every other frame (GIF_NTHFRAME) and the result plays at the
+	// 20fps frame framerate, so 96 spans 192 simulated frames — 5.5s of play at Doom's
+	// 35hz tic rate, watched over 4.8s.
 	//
 	// This number is the only real control over how big the clip gets, and it matters:
 	// the image sits on a profile README and is fetched on every view. Measured on the
 	// VPS against a barrel explosion, which is the worst case in Doom — a bright,
 	// full-screen, fast-changing fireball:
 	//
-	//   48 frames 1014KB   32 frames 602KB   24 frames 448KB
+	//   32 frames 1.8s 588KB    48 frames 2.7s 990KB
+	//   64 frames 3.7s 1464KB   96 frames 5.5s 2658KB
 	//
-	// A death without pyrotechnics is far cheaper — the same clip over a mostly static
-	// aftermath is 190KB at 48 frames. Two other levers were measured and rejected.
-	// Downscaling works (320 wide roughly halves it) but breaks the equal panel widths
-	// the README depends on to read as one object, and `GIF_WIDTH` already offers it
-	// globally for anyone who wants it. Shrinking the palette barely helps: 256 → 32
-	// colours only takes the worst case from 1006KB to 666KB, and 32 colours on an
-	// explosion looks it.
+	// So five seconds is not free: ~2.6MB on a pyrotechnic death, against ~400KB for an
+	// ordinary one where most of the tail is a static death screen. That trade was made
+	// deliberately — it shipped at 32 and read as too short to see what happened.
 	//
-	// 32 also keeps a margin over the largest single click the README offers (x25 = 25
-	// frames), so the death itself stays inside the window rather than the clip being
-	// all aftermath.
-	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(32),
+	// Two other levers were measured and rejected. Downscaling works (320 wide roughly
+	// halves it) but breaks the equal panel widths the README depends on to read as one
+	// object, and `GIF_WIDTH` already offers it globally. Shrinking the palette barely
+	// helps: 256 → 32 colours only takes the worst case from 1006KB to 666KB, and 32
+	// colours on an explosion looks it.
+	//
+	// Whatever this is set to, keep it well clear of the largest single click the README
+	// offers (x25 = 25 frames), so the death itself stays inside the window rather than
+	// the clip being all aftermath.
+	DEATH_CAM_FRAMES: z.coerce.number().int().positive().max(240).default(96),
 
 	// Let a bot play when nobody has for a while, so a run that ended up dead or wedged
 	// against a wall does not freeze the README image permanently.

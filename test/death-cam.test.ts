@@ -89,7 +89,7 @@ describe('death cam configuration', () => {
 
 	test('caps the clip length', () => {
 		// This gif is fetched on every profile view and bytes scale with frames.
-		expect(schema.parse({}).DEATH_CAM_FRAMES).toBe(32);
+		expect(schema.parse({}).DEATH_CAM_FRAMES).toBe(96);
 		expect(schema.safeParse({ DEATH_CAM_FRAMES: '1000' }).success).toBe(false);
 		expect(schema.safeParse({ DEATH_CAM_FRAMES: '0' }).success).toBe(false);
 	});
