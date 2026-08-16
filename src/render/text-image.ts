@@ -16,7 +16,12 @@ const MAX_WIDTH = 1920 / 2;
 const CHAR_WIDTH = FONT_SIZE * 0.60205;
 const LINE_HEIGHT = Math.round(FONT_SIZE * 1.35);
 
-const MAX_CHARS_PER_LINE = Math.max(1, Math.floor((MAX_WIDTH - MARGIN * 2) / CHAR_WIDTH));
+/** How many glyphs fit in a canvas of this width, allowing for the margins. */
+function charsPerLine(width: number): number {
+	return Math.max(1, Math.floor((width - MARGIN * 2) / CHAR_WIDTH));
+}
+
+const MAX_CHARS_PER_LINE = charsPerLine(MAX_WIDTH);
 
 function escapeXml(text: string): string {
 	return text
@@ -26,16 +31,16 @@ function escapeXml(text: string): string {
 		.replace(/"/g, '&quot;');
 }
 
-function wrap(text: string): string[] {
+function wrap(text: string, limit = MAX_CHARS_PER_LINE): string[] {
 	const lines: string[] = [];
 
 	for (const paragraph of text.split('\n')) {
-		if (paragraph.length <= MAX_CHARS_PER_LINE) {
+		if (paragraph.length <= limit) {
 			lines.push(paragraph);
 			continue;
 		}
-		for (let i = 0; i < paragraph.length; i += MAX_CHARS_PER_LINE) {
-			lines.push(paragraph.slice(i, i + MAX_CHARS_PER_LINE));
+		for (let i = 0; i < paragraph.length; i += limit) {
+			lines.push(paragraph.slice(i, i + limit));
 		}
 	}
 
@@ -48,7 +53,9 @@ function wrap(text: string): string[] {
  *   contents is what made that stack look like unrelated pieces.
  */
 export async function renderTextImage(text: string, fixedWidth?: number): Promise<Buffer> {
-	const lines = wrap(text);
+	// Wrapping has to follow the canvas: forcing a width while still wrapping at the
+	// default meant lines ran past the right edge and were clipped mid-word.
+	const lines = wrap(text, fixedWidth === undefined ? MAX_CHARS_PER_LINE : charsPerLine(fixedWidth));
 	const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
 
 	const width = fixedWidth ?? Math.max(1, Math.ceil(MARGIN * 2 + longest * CHAR_WIDTH));

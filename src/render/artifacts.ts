@@ -46,6 +46,23 @@ export function gifFrameCount(lastBatch: string): number {
 }
 
 /**
+ * The rendering settings that change what a frame looks like.
+ *
+ * Folded into the cache key alongside the input, because the input alone is not what
+ * determines the output. Caught in production: the bezel was added, and every existing
+ * frame stayed on disk unchanged — the buffer had not moved, so the hash still matched
+ * and nothing re-rendered. A namespace nobody was actively playing would have served a
+ * pre-bezel image indefinitely. Any future setting that alters the picture belongs here.
+ */
+function renderFingerprint(): string {
+	return [
+		config.GIF_WIDTH,
+		config.FRAME_BORDER,
+		config.FRAME_STATUS_OVERLAY ? 'overlay' : 'plain',
+	].join(':');
+}
+
+/**
  * Renders `frame_<ns>.<type>` if the input buffer has moved since it was last made,
  * and returns the path either way.
  *
@@ -58,7 +75,7 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 	// namespace it is the bootstrap prefix, and the gif length depends on that.
 	const input = getInput(namespace);
 	const joined = getInputString(namespace);
-	const hash = createHash('md5').update(joined).digest('hex');
+	const hash = createHash('md5').update(joined).update('\0').update(renderFingerprint()).digest('hex');
 
 	const artifact = `frame.${type}`;
 	const outputPath = paths.frame(namespace, type);
