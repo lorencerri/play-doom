@@ -32,10 +32,19 @@ function release(): void {
 	else active -= 1;
 }
 
-// One chain per namespace, so two clicks on the same namespace never render the
-// same artifact concurrently and race over the output file. Different namespaces
-// still run in parallel, bounded by the global cap above.
+// One chain per lane, so two jobs that write the same file never run concurrently.
+// Different lanes still run in parallel, bounded by the global cap above.
+//
+// The lane is `<namespace>:frame` or `<namespace>:video`, not the namespace alone.
+// Sharing one chain meant a reset — which queues a cheap frame render and an archive
+// of the whole finished run — left the frame waiting behind 33 seconds of video
+// encoding, and README image requests hung until the proxy gave up. Frames and videos
+// write entirely separate files, so serialising them against each other bought nothing.
 const chains = new Map<string, Promise<unknown>>();
+
+/** Lane keys. Anything writing `frame_<ns>.*` uses one; anything writing an mp4 the other. */
+export const frameLane = (namespace: string): string => `${namespace}:frame`;
+export const videoLane = (namespace: string): string => `${namespace}:video`;
 
 export function enqueue<T>(namespace: string, label: string, job: () => Promise<T>): Promise<T> {
 	// Refuse before joining the chain rather than after: a job admitted here is

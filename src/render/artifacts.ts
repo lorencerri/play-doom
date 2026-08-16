@@ -13,7 +13,7 @@ import { fileExists } from '../http/serve.ts';
 import { renderFrame, renderVideo } from './doom.ts';
 import { concat } from './ffmpeg.ts';
 import { recordRenderFailure, recordRenderSuccess } from './health.ts';
-import { enqueue, QueueFullError } from './queue.ts';
+import { enqueue, frameLane, QueueFullError, videoLane } from './queue.ts';
 
 export const paths = {
 	frame: (namespace: string, type: string) => `${config.DATA_DIR}/frame_${namespace}.${type}`,
@@ -80,12 +80,18 @@ export async function ensureFrame(namespace: string, type: Filetype): Promise<st
 	const artifact = `frame.${type}`;
 	const outputPath = paths.frame(namespace, type);
 
-	const current = async () => getRenderHash(namespace, artifact) === hash && (await fileExists(outputPath));
+	const hashMatches = () => getRenderHash(namespace, artifact) === hash;
+	const current = async () => hashMatches() && (await fileExists(outputPath));
 
-	if (await current()) return outputPath;
+	// The hash check is deliberately synchronous, and only a *match* falls through to
+	// the async existence check. Awaiting unconditionally yielded the event loop before
+	// this job reached the queue, which let `endRun` — which calls warmFrames and then
+	// archiveRun — register the archive first. The frame then sat behind a whole run's
+	// video encode, and README image requests hung for ~30s after every reset.
+	if (hashMatches() && (await fileExists(outputPath))) return outputPath;
 
 	try {
-		await enqueue(namespace, `frame:${type}`, async () => {
+		await enqueue(frameLane(namespace), `frame:${type}`, async () => {
 			// Re-check inside the queue: an eager render kicked off by the click and a
 			// lazy one from the image request routinely race, and the loser should not
 			// redo the work it was waiting on.
@@ -191,7 +197,7 @@ export async function ensureCurrentVideo(namespace: string): Promise<string> {
 
 	if (!getState(namespace).current_video_outdated && (await fileExists(path))) return path;
 
-	await enqueue(namespace, 'video:current', async () => {
+	await enqueue(videoLane(namespace), 'video:current', async () => {
 		// Re-check inside the queue: several requests can arrive while one render is
 		// already running, and they would otherwise each redo the same work.
 		if (!getState(namespace).current_video_outdated && (await fileExists(path))) return;
@@ -218,7 +224,7 @@ export async function ensureFullVideo(namespace: string): Promise<string | undef
 	const settled = async () => (listSegments(namespace).length === 0 ? await fileExists(fullPath) : false);
 	if (await settled()) return fullPath;
 
-	await enqueue(namespace, 'video:fold', async () => {
+	await enqueue(videoLane(namespace), 'video:fold', async () => {
 		// Re-read inside the queue: an archive that was queued behind this request
 		// may have added a segment, and concurrent readers should not fold twice.
 		const segments = listSegments(namespace);
@@ -253,7 +259,7 @@ export async function ensureCombinedVideo(namespace: string): Promise<string> {
 
 	if (!getState(namespace).combined_outdated && (await fileExists(path))) return path;
 
-	await enqueue(namespace, 'video:combined', async () => {
+	await enqueue(videoLane(namespace), 'video:combined', async () => {
 		if (!getState(namespace).combined_outdated && (await fileExists(path))) return;
 
 		await concat(namespace, [paths.full(namespace), paths.current(namespace)], path);
@@ -280,9 +286,10 @@ export async function endRun(namespace: string): Promise<boolean> {
 	setFlags(namespace, { current_video_outdated: true, combined_outdated: true });
 	recordNamespaceStats(namespace, { runs: hadPlay ? 1 : 0 });
 
-	// Queued before the archive on purpose. Both are detached, but they share the
-	// per-namespace queue, and archiving re-renders an entire run — putting the cheap
-	// opening frame behind it would leave the README stale for as long as that takes.
+	// Queued before the archive, and now actually so: frames and videos run in separate
+	// lanes, and `ensureFrame` reaches the queue without awaiting first. Both were
+	// needed — with either one missing, a reset left the README image hanging behind a
+	// full run's video encode.
 	warmFrames(namespace);
 
 	if (hadPlay) {
@@ -313,7 +320,7 @@ export async function endRun(namespace: string): Promise<boolean> {
  * the full video is actually asked for.
  */
 export async function archiveRun(namespace: string, input: string): Promise<void> {
-	await enqueue(namespace, 'video:archive', async () => {
+	await enqueue(videoLane(namespace), 'video:archive', async () => {
 		const seq = nextSeq(namespace);
 		const segmentPath = paths.segment(namespace, seq);
 

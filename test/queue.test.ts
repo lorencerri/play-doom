@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { config } from '../src/config.ts';
-import { enqueue, queueDepth } from '../src/render/queue.ts';
+import { enqueue, frameLane, queueDepth, videoLane } from '../src/render/queue.ts';
 
 function deferred() {
 	let resolve!: () => void;
@@ -71,5 +71,47 @@ describe('render queue', () => {
 		expect(depth.active).toBe(0);
 		expect(depth.waiting).toBe(0);
 		expect(depth.namespaces).toBe(0);
+	});
+});
+
+describe('lanes', () => {
+	test('frames and videos for one namespace do not block each other', async () => {
+		// The reset bug: a cheap frame render sat behind a whole run's video encode
+		// because both used the namespace as the chain key, and README image requests
+		// hung until the proxy gave up.
+		const order: string[] = [];
+		let releaseVideo!: () => void;
+		const videoBlocked = new Promise<void>((resolve) => (releaseVideo = resolve));
+
+		const video = enqueue(videoLane('ns'), 'video', async () => {
+			order.push('video:start');
+			await videoBlocked;
+			order.push('video:end');
+		});
+
+		const frame = enqueue(frameLane('ns'), 'frame', async () => {
+			order.push('frame');
+		});
+
+		await frame;
+		expect(order).toContain('frame');
+		expect(order).not.toContain('video:end');
+
+		releaseVideo();
+		await video;
+	});
+
+	test('two jobs in the same lane still serialise', async () => {
+		const order: string[] = [];
+		const first = enqueue(frameLane('ns2'), 'a', async () => {
+			await Bun.sleep(5);
+			order.push('a');
+		});
+		const second = enqueue(frameLane('ns2'), 'b', async () => {
+			order.push('b');
+		});
+
+		await Promise.all([first, second]);
+		expect(order).toEqual(['a', 'b']);
 	});
 });
