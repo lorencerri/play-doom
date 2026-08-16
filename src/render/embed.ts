@@ -30,9 +30,13 @@ export type EmbedOptions = {
 	 *
 	 * The two cannot coexist in one panel and it is not a rendering limitation: a grid of
 	 * animated tiles would be thirty gifs each starting its loop whenever it happened to
-	 * finish loading, so a moving scene would arrive shattered. Static tiles are also
-	 * *cheaper* than the gif they replace — a png render skips the palette pipeline
-	 * entirely, and thirty-three crops of one frame come to less than one animation.
+	 * finish loading, so a moving scene would arrive shattered.
+	 *
+	 * Static tiles are also *cheaper* than the gif they replace. Measured on the VPS
+	 * against one frame of E1M1: the 33 tiles come to 63KB against 90KB for the gif of the
+	 * same moment, and the gap widens with motion, since a gif's size is dominated by how
+	 * much of it moves. The render is cheaper too — a png skips the palette pipeline that
+	 * a gif pays for.
 	 *
 	 * What is lost is the replay of the move just made. Set false to keep it.
 	 */

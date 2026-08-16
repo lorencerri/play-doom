@@ -278,7 +278,16 @@ const inFlight = new Map<string, Promise<void>>();
 
 export async function sliceScreen(namespace: string, sourcePng: string): Promise<void> {
 	const existing = inFlight.get(namespace);
-	if (existing) return existing;
+
+	// Re-entered rather than returning the job that was already running: a click can land
+	// while a grid is being cut, and the slice this caller waited on would then be of the
+	// frame before theirs. The second pass is free when nothing moved, because `cutTiles`
+	// checks the stamp first, and it re-enters here so the waiters still collapse to one
+	// cut rather than thirty.
+	if (existing) {
+		await existing;
+		return sliceScreen(namespace, sourcePng);
+	}
 
 	const job = cutTiles(namespace, sourcePng).finally(() => inFlight.delete(namespace));
 	inFlight.set(namespace, job);
